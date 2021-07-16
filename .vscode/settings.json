@@ -1,0 +1,10 @@
+{
+
+	"files.associations": {
+		"*.mqh":"cpp",
+		"*.mq4":"cpp",
+		"*.mq5":"cpp"
+	 }
+
+	 "C_Cpp.errorSquiggles": "Disabled"
+}

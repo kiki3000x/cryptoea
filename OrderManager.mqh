@@ -96,8 +96,8 @@ class COrderManager
 		// 		v1.0		2021.04.14			taji		新規
 		// *************************************************************************/
 		void OrderTradeActionDeal(double volume, ENUM_ORDER_TYPE type){
-			MqlTradeRequest request={0};
-			MqlTradeResult result={0};
+			MqlTradeRequest request = {};
+			MqlTradeResult result={};
 
 			request.action   =TRADE_ACTION_DEAL;
 			request.symbol   =Symbol();

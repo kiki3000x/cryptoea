@@ -266,10 +266,11 @@ class COrderManager
 			if(1){
 				int boundary_for_caluculation_num =5;
 
+#ifdef CONFICRATION_PATERN_TAJI
 				if(Config_tp_calculation_mode == TP_CALCULATION_MODE_TAJI){//★変更taji
 					boundary_for_caluculation_num = 2;
 				}
-
+#endif
 				if( position_num > boundary_for_caluculation_num ){		// 4つ以上注文があったら(デフォルト)
 					// 少しでもプラスになったら約定
 					double sum_volume = 0.0;
@@ -290,6 +291,7 @@ class COrderManager
 				//							+(string)position_price_array[array_num-1] + " alpha = " + (string)alpha );
 			}
 
+#ifndef CONFICRATION_PATERN_TAJI
 			//(test)5つ以上ポジション保持してから経過日時×100USDづつnew_tpを損する方向へずらす(2日以上経過したら発動)
 			/*if(Config_tp_calculation_mode == TP_CALCULATION_MODE_TAJI){//★変更taji
 				long current_time = (long)TimeCurrent();
@@ -307,7 +309,7 @@ class COrderManager
 				}
 			}*/
 			//C_logger.output_log_to_file(StringFormat("  create_time_array[0] = %d current_time = %d", create_time_array[0],current_time));
-
+#endif
 			return new_tp;
 		}
 

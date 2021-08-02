@@ -1,5 +1,15 @@
+// *************************************************************************
+//   システム	： CryptoEA
+//   概要		： EA用の実行ファイル
+//   注意		： なし
+//   メモ		： なし
+// **************************    履    歴    *******************************
+// 		v1.0		2021.04.14			Taji		新規
+// 		v1.1		2021.08.02			Taka		インプットの設定を追加
+// *************************************************************************/
+
 //**************************************************
-// class CHandler
+// インクルードファイル（include）
 //**************************************************
 #include "Logger.mqh"
 #include "OrderManager.mqh"
@@ -7,10 +17,19 @@
 #include "CheckerException.mqh"
 #include "Configuration.mqh"
 #include "CheckerBars.mqh"
+
+//**************************************************
+// UIインプット
+//**************************************************
+// 既存
 input int trailingStop_mode = 100;
 input double input_SetSLFromTP_range = -1;
 input double input_trailingStop_range = -1;
 input double input_terminalg_lot = -1;
+// 新規
+input int AM_Averaging_1st_width	= 400;		// 1-2ピン目の幅 [USD]
+input int AM_MarginRateLimiter		= 5000;		// 証拠金維持率リミッター [%]
+
 
 class CHandler
 {
@@ -284,7 +303,7 @@ class CHandler
 			//C_DisplayInfo.UpdateOrderInfo();		// 注文情報を更新
 			C_DisplayInfo.ShowData( C_CheckerException.Get_chkAccountState() );				// コメントをチャート上に表示
 			
-			double base_lot=GlobalVariableGet("terminalg_lot");
+			double base_lot = GlobalVariableGet("terminalg_lot");		// 初期ロット取得
 			
 			//日付チェック、フェードアウトモード移行
 			Chk_Expired();
@@ -388,7 +407,7 @@ class CHandler
 			ulong deal = trans.deal;    //約定チケット
 			ulong order = trans.deal;   //注文チケット
 			//ENUM_DEAL_REASON reason = HistoryDealGetInteger(deal,DEAL_REASON);
-			ENUM_DEAL_REASON reason = HistoryDealGetInteger(order,DEAL_REASON);
+			ENUM_DEAL_REASON reason = (ENUM_DEAL_REASON)HistoryDealGetInteger(order,DEAL_REASON);
 			//C_logger.output_log_to_file(StringFormat("Handler::OnTradeTransaction deal %d",deal));
 			//C_logger.output_log_to_file(StringFormat("Handler::OnTradeTransaction deal_type %d DEAL_TYPE_BUY=%d, DEAL_TYPE_SELL=%d",trans.deal_type,DEAL_TYPE_BUY,DEAL_TYPE_SELL));
 			//C_logger.output_log_to_file(StringFormat("Handler::OnTradeTransaction price_sl %d",trans.price_sl));

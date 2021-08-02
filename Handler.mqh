@@ -282,13 +282,13 @@ class CHandler
 		// *************************************************************************/
 		void OnTick(){
 			//C_DisplayInfo.UpdateOrderInfo();		// 注文情報を更新
-			//C_DisplayInfo.ShowData();				// コメントをチャート上に表示
+			C_DisplayInfo.ShowData();				// コメントをチャート上に表示
+			
 			double base_lot=GlobalVariableGet("terminalg_lot");
-
-
+			
 			//日付チェック、フェードアウトモード移行
 			Chk_Expired();
-
+			
 			C_OrderManager.UpdateSLTP( POSITION_TYPE_BUY );
 			C_OrderManager.UpdateSLTP( POSITION_TYPE_SELL );
 			

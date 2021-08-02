@@ -1,0 +1,29 @@
+{
+	"version": "2.0.0",
+	"tasks": 
+	[
+	  {
+		"label": "MQL4-Compile",
+		"group": 
+		{
+		  "kind"      : "build",
+		  "isDefault" : true
+		},
+		"presentation": 
+		{
+		  "echo"  : true,
+		  "reveal": "always",
+		  "focus" : true,
+		  "panel" : "shared"
+		},
+		"promptOnClose" : true,
+		"type"          : "process",
+		"command" : "C:\\Program Files\\HatioLtd MetaTrader 5\\metaeditor64.exe",  // ← これは MT5 のインストール先により異なる
+		"args"    : 
+		[ 
+		"/compile:${fileBasename}",
+		"/log:${fileBasenameNoExtension}.log",
+		]
+	  }
+	]
+  }

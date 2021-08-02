@@ -7,7 +7,6 @@ class CDisplayInfo
 {
 	private:
 		static CDisplayInfo* m_DisplayInfo;
-	
 		//プライベートコンストラクタ(他のクラスにNewはさせないぞ！！！)
 		CDisplayInfo(){}
 		// 注文情報
@@ -82,10 +81,11 @@ class CDisplayInfo
 		void ShowData( void ){
 			// 表示 （注）Comment()を複数コールすると、最後の文字列しか表示されない
 			Comment(
-				"■■■  Crypto Master  ■■■ \n",
-				"システム: ", EA_STAGE, " Ver." + EA_VERSION, "\n",
-				"\n"
-				"[注文数]" + (string)OrderNow.total_cnt +" [買い注文数]" + (string)OrderNow.buy_cnt +" [売り注文数]" + (string)OrderNow.sell_cnt,
+				"[SYSTEM Version] ", EA_STAGE, " Ver." + EA_VERSION, "\n",
+				"[口座番号] ", (string)AccountInfoInteger( ACCOUNT_LOGIN ), "\n",
+				"[有効期限] ", EA_END_DATE, "\n",
+//				"\n"
+//				"[注文数] " + (string)OrderNow.total_cnt +" [買い注文数]" + (string)OrderNow.buy_cnt +" [売り注文数]" + (string)OrderNow.sell_cnt,
 				"\n"
 			);
 			//	Comment("test1" ,"test2 \n");		// sample

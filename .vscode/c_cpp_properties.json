@@ -3,7 +3,8 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "C:/Users/kiki3/AppData/Roaming/MetaQuotes/Terminal/A562C60AAEED2D6E7E5976B5FCB75493/MQL5/Include"
             ],
             "defines": [
                 "_DEBUG",

@@ -142,7 +142,7 @@ class CHandler
 
 			// 口座番号確認
 			if( C_CheckerException.Chk_Account() == false ){
-				C_logger.output_log_to_file("Handler::OnInit 特定口座ではない");
+				C_logger.output_log_to_file("Handler::OnInit 起動対象ではない -> EA終了");
 				if( SPECIFIED_ACCOUNT_CHECK == true ){
 					ExpertRemove();					// OnDeinit()をコールしてEA終了処理
 				}

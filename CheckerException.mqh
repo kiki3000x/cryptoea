@@ -164,7 +164,7 @@ class CCheckerException
 				return true;
 			}
 			else{
-				C_logger.output_log_to_file("CCheckerException::Chk_Account 起動対象ではない -> EA終了 ");
+				C_logger.output_log_to_file("CCheckerException::Chk_Account 起動対象ではない");
 				B_accountOk = false;		// 口座状況を記録
 				return false;
 			}

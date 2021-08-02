@@ -17,7 +17,7 @@ class CCheckerException
 	private:
 		static CCheckerException* m_CheckerException;
 		CLogger* C_logger;
-//		bool B_accountOk;
+		bool B_accountOk;
 		
 		//プライベートコンストラクタ(他のクラスにNewはさせないぞ！！！)
 		CCheckerException(){
@@ -86,8 +86,17 @@ class CCheckerException
 			return ans;				// 結果を返す
 		}
 		
-
-#ifdef ADD_CheckerException
+		
+		// *************************************************************************
+		//	機能		： 口座の有効結果を表示
+		//	注意		： なし
+		//	メモ		： なし
+		//	引数		： なし
+		//	返り値		： 口座状態
+		//	参考URL		： なし
+		// **************************	履	歴	************************************
+		// 		v1.0		2021.08.02			Taka		新規
+		// *************************************************************************/
 		string Get_chkAccountState(void){
 			
 			if( B_accountOk == true ){
@@ -97,7 +106,6 @@ class CCheckerException
 				return "口座無効";
 			}
 		}
-#endif
 		
 		
 		// *************************************************************************
@@ -152,12 +160,12 @@ class CCheckerException
 			C_logger.output_log_to_file( "[口座確認] 起動対象の口座番号か？");
 			if( account == temp_arrary[near_account] ){		// 同一ID
 				C_logger.output_log_to_file("CCheckerException::Chk_Account 起動対象: " + (string)account );
-//				B_accountOk = true;
+				B_accountOk = true;			// 口座状況を記録
 				return true;
 			}
 			else{
 				C_logger.output_log_to_file("CCheckerException::Chk_Account 起動対象ではない -> EA終了 ");
-//				B_accountOk = false;
+				B_accountOk = false;		// 口座状況を記録
 				return false;
 			}
 		}

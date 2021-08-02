@@ -77,12 +77,13 @@ class CDisplayInfo
 		//	参考URL		： https://yukifx.web.fc2.com/sub/reference/05_common_func/cone/commonfunc_comment.html
 		// **************************	履	歴	************************************
 		// 		v1.0		2021.04.14			Taka		新規
+		// 		v1.1		2021.08.02			Taka		表示内容見直し
 		// *************************************************************************/
-		void ShowData( void ){
+		void ShowData( string account ){
 			// 表示 （注）Comment()を複数コールすると、最後の文字列しか表示されない
 			Comment(
 				"[SYSTEM Version] ", EA_STAGE, " Ver." + EA_VERSION, "\n",
-				"[口座番号] ", (string)AccountInfoInteger( ACCOUNT_LOGIN ), "\n",
+				"[口座番号] ", (string)AccountInfoInteger( ACCOUNT_LOGIN ), " : " + account,"\n",
 				"[有効期限] ", EA_END_DATE, "\n",
 //				"\n"
 //				"[注文数] " + (string)OrderNow.total_cnt +" [買い注文数]" + (string)OrderNow.buy_cnt +" [売り注文数]" + (string)OrderNow.sell_cnt,

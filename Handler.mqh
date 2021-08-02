@@ -282,7 +282,7 @@ class CHandler
 		// *************************************************************************/
 		void OnTick(){
 			//C_DisplayInfo.UpdateOrderInfo();		// 注文情報を更新
-			C_DisplayInfo.ShowData();				// コメントをチャート上に表示
+			C_DisplayInfo.ShowData( C_CheckerException.Get_chkAccountState() );				// コメントをチャート上に表示
 			
 			double base_lot=GlobalVariableGet("terminalg_lot");
 			

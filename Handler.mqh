@@ -27,6 +27,7 @@ input double input_SetSLFromTP_range = -1;
 input double input_trailingStop_range = -1;
 input double input_terminalg_lot = -1;
 // 新規
+input double AM_1stLot				= 0.01;		// 初期ロット [lot]
 input int AM_Averaging_1st_width	= 400;		// 1-2ピン目の幅 [USD]
 input int AM_MarginRateLimiter		= 5000;		// 証拠金維持率リミッター [%]
 
@@ -260,7 +261,7 @@ class CHandler
 		// *************************************************************************
 		//	機能		： OnTickの取引処理
 		//	注意		： なし
-		//	メモ		： なし
+		//	メモ		： ロット数や注文幅はこの関数で処理
 		//	引数		： 注文の種類（売り/買いなど）
 		//	返り値		： なし
 		//	参考URL		： なし
@@ -269,7 +270,8 @@ class CHandler
 		// *************************************************************************/
 		void OnTickPosition( ENUM_POSITION_TYPE en_pos ){
 			
-			double	base_lot = GlobalVariableGet("terminalg_lot");		// 初期ロット取得
+//			double	base_lot = GlobalVariableGet("terminalg_lot");		// 初期ロット取得
+			double	base_lot = AM_1stLot;								// 初期ロット取得
 			double	nowPrice;											// 現在価格
 			double	lastPrice;											// 最終価格
 			double	diff;												// 現在価格と最後の注文との差額を計算
@@ -324,7 +326,7 @@ class CHandler
 				/* 所定のピン幅下がったら追加注文 */
 				if( diff > diffNextPrice ){
 					
-					lot = base_lot * MathPow( 1.278, TotalOrderNum - 1 );	// 注文量 
+					lot = base_lot * MathPow( 1.278, TotalOrderNum );	// 注文量 
 					C_OrderManager.OrderTradeActionDeal( lot, en_order );	// 追加注文
 					C_logger.output_log_to_file( StringFormat("注文実施 [売買]%d(0:buy 1:sell) [lot]%f", lot ) );
 				}
@@ -333,6 +335,26 @@ class CHandler
 		}
 		
 		
+		// *************************************************************************
+		//	機能		： OnTickの価格更新処理
+		//	注意		： なし
+		//	メモ		： なし
+		//	引数		： 注文の種類（売り/買いなど）
+		//	返り値		： なし
+		//	参考URL		： なし
+		// **************************	履	歴	************************************
+		// 		v1.0		2021.08.04			Taka		新規
+		// *************************************************************************/
+		void OnTickUpdatePrice( ENUM_POSITION_TYPE en_pos ){
+			
+			double newTP;
+			
+			C_OrderManager.UpdateOrderList();				// EA注文リストデータを更新する
+			newTP = C_OrderManager.GetNewTP( en_pos );		// TP取得
+			C_OrderManager.SetTP( en_pos, newTP );			// TP設定
+		}
+			
+			
 		// *************************************************************************
 		//	機能		： 価格更新ごとに実行される関数
 		//	注意		： なし
@@ -375,15 +397,17 @@ class CHandler
 			/* 急激な値動き確認 */
 			// 急騰急落の場合には注文を行わない
 
-			/* 取引処理 */
+			/* 取引処理（注文関連） */
 			OnTickPosition( POSITION_TYPE_BUY );		// Buyの取引
 			OnTickPosition( POSITION_TYPE_SELL );		// Sellの取引
+
+			/* 価格更新処理 */
+			OnTickUpdatePrice( POSITION_TYPE_BUY );		// Buyの価格更新
+			OnTickUpdatePrice( POSITION_TYPE_SELL );	// Sellの価格更新
 
 
 
 #ifdef AAA		
-			C_OrderManager.UpdateSLTP( POSITION_TYPE_BUY );
-			C_OrderManager.UpdateSLTP( POSITION_TYPE_SELL );
 	
 			// 証拠金維持率チェック (所定のパーセンテージ下回ったら取引しない)
 			if( AccountInfoDouble( ACCOUNT_MARGIN_LEVEL ) != 0 ){			// ポジションが0の時は維持率0になる

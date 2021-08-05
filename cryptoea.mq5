@@ -41,7 +41,7 @@ void OnTimer(){
 	C_Handler.OnTimer();
 }
 //+------------------------------------------------------------------+
-//| TradeTransaction function                                                   |
+//| TradeTransaction function                                        |
 //+------------------------------------------------------------------+
 void OnTradeTransaction(
 	const MqlTradeTransaction&    trans,

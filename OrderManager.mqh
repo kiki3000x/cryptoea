@@ -1,28 +1,393 @@
 //**************************************************
 // class COrderManager
 //**************************************************
+
+//**************************************************
+// インクルードファイル（include）
+//**************************************************
 #include "Logger.mqh"
 #include "Configuration.mqh"
 
+
+//**************************************************
+// 定義（define）
+//**************************************************
+
+//**************************************************
+// 列挙体（enum）
+//**************************************************
+
+//**************************************************
+// 構造体（struct）
+//**************************************************
+/* EA注文リストデータ */
+struct stORDER
+{
+	int		i_orderNum;					// 注文数
+	double	d_price[MAX_EA_NUM];		// 各価格
+	double	d_volume[MAX_EA_NUM];		// 各ロット
+	double	d_swap[MAX_EA_NUM];			// 各スワップ
+	double	d_tp[MAX_EA_NUM];			// 各TP
+	double	d_SL[MAX_EA_NUM];			// 各SL
+	int		i_digits[MAX_EA_NUM];		// 各小数点以下の桁数
+	long	l_createTime[MAX_EA_NUM];	// 各注文が出された時刻
+	string	s_comment;					// コメント
+};
+
+
+//**************************************************
+// グローバル変数
+//**************************************************
+// EA管理下のポジションリスト
+static stORDER st_BuyEA;			// EA管理下のBUYリスト
+static stORDER st_SellEA;			// EA管理下のSELLリスト
+
+
+//**************************************************
+// クラス
+//**************************************************
 class COrderManager
 {
+
 	private:
 		static COrderManager* m_OrderManager;
 		CLogger*              C_logger;
 
+		
 		COrderManager(){
 			C_logger = CLogger::GetLog();
 		}
 
 	public:
+
 		static COrderManager* GetOrderManager(){
 			if(CheckPointer(m_OrderManager) == POINTER_INVALID){
 				m_OrderManager = new COrderManager();
 			}
+			
+			/* オブジェクト生成時にデータ初期化 */
+			ZeroMemory( st_BuyEA );
+			ZeroMemory( st_SellEA );
+			
 			return m_OrderManager;
 		}
+		
+		
+		// *************************************************************************
+		//	機能		： EA注文リストデータを初期化する
+		//	注意		： なし
+		//	メモ		： なし
+		//	引数		： なし
+		//	返り値		： なし
+		//	参考URL		： なし
+		// **************************	履	歴	************************************
+		// 		v1.0		2021.08.05			Taka		新規
+		// *************************************************************************/
+		void ClrOrderList( void ){
+			
+			/* オブジェクト生成時にデータ初期化 */
+			ZeroMemory( st_BuyEA );
+			ZeroMemory( st_SellEA );
+			
+			/* Debug */
+//			Print(StringFormat("st_BuyEA:  d_price[0]%f [1]%f [2]%f [3]%f [4]%f",
+//								st_BuyEA.d_price[0], st_BuyEA.d_price[1], st_BuyEA.d_price[2], st_BuyEA.d_price[3], st_BuyEA.d_price[4] )
+//			);
+//			Print( StringFormat("st_BuyEA:  [comment]%s", st_BuyEA.s_comment ) );
+		}
+		
+		
+		// *************************************************************************
+		//	機能		： EA注文リストデータを更新する
+		//	注意		： なし
+		//	メモ		： なし
+		//	引数		： なし
+		//	返り値		： なし
+		//	参考URL		： なし
+		// **************************	履	歴	************************************
+		// 		v1.0		2021.08.05			Taka		新規
+		// *************************************************************************/
+		void UpdateOrderList( void ){
+			
+			int		total = PositionsTotal();	// 注文の種類に応じた全ポジション数（EAと手打ち）
+			ulong	ticket;						// ポジションチケット取得（コールする儀式）
+			string	symbol;						// シンボル
+			ulong	magic;						// マジックナンバー
+			ENUM_POSITION_TYPE type;			// 売買タイプ
+			int		index_buy = 0;				// 保有ポジション数(買い)
+			int		index_sell = 0;				// 保有ポジション数(売り)
+#ifdef debug_Handler
+			static int i_sec = 0;				// [Debug] 前回の秒
+			MqlDateTime time;					// [Debug] 秒を取り出す
+			datetime now = TimeLocal();			// [Debug] 現在日時（ローカル時間）			
+			TimeToStruct( now, time );			// [Debug] データ格納
+#endif			
+			/* EAでのみ管理する注文について、全情報を変数に格納 */
+			for( int i = 0; i < total; i++ ){
+				
+				ticket	= PositionGetTicket( i );						// ポジションチケット取得（コールする儀式）
+				symbol	= PositionGetString( POSITION_SYMBOL );			// シンボル
+				magic	= PositionGetInteger( POSITION_MAGIC );			// マジックナンバー
+				type	= (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);	// 売買タイプ
+				
+				// EA以外はデータを格納しない
+				if( magic != MAGICNUM ) continue;
+				
+				// 注文方法に応じてデータ格納
+				if( type == POSITION_TYPE_BUY ){		// 買い（POSITION_TYPE_BUY）
+				
+					st_BuyEA.d_price[index_buy] 		= PositionGetDouble( POSITION_PRICE_OPEN );			// オープン価格
+					st_BuyEA.d_volume[index_buy] 		= PositionGetDouble( POSITION_VOLUME );				// ロット
+					st_BuyEA.i_digits[index_buy] 		= (int)SymbolInfoInteger( symbol,SYMBOL_DIGITS );	// 小数点以下の桁数
+					st_BuyEA.l_createTime[index_buy]	= (long)PositionGetInteger(POSITION_TIME);			// 注文が出された時刻
+					index_buy++;		// 次のデータを格納
+				} 
+				else{		// 売り（POSITION_TYPE_SELL）
+					
+					st_SellEA.d_price[index_sell] 		= PositionGetDouble( POSITION_PRICE_OPEN );			// オープン価格
+					st_SellEA.d_volume[index_sell] 		= PositionGetDouble( POSITION_VOLUME );				// ロット
+					st_SellEA.i_digits[index_sell] 		= (int)SymbolInfoInteger( symbol,SYMBOL_DIGITS );	// 小数点以下の桁数
+					st_SellEA.l_createTime[index_sell]	= (long)PositionGetInteger(POSITION_TIME);			// 注文が出された時刻
+					index_sell++;		// 次のデータを格納
+				}
+			}
+			
+			/* 全注文数保管 */
+			st_BuyEA.i_orderNum = index_buy;
+			st_SellEA.i_orderNum = index_sell;
+			
+#ifdef debug_Handler
+			/* [Debug] 1秒に最高1回ログ */
+			if( i_sec != time.sec ){
+				C_logger.output_log_to_file(
+					StringFormat("買[0]%f, [1]%f, [2]%f, [3]%f, [4]%f",
+									st_BuyEA.d_price[0], st_BuyEA.d_price[1], st_BuyEA.d_price[2], st_BuyEA.d_price[3], st_BuyEA.d_price[4] )
+				);
+				C_logger.output_log_to_file(
+					StringFormat("売[0]%f, [1]%f, [2]%f, [3]%f, [4]%f",
+									st_SellEA.d_price[0], st_SellEA.d_price[1], st_SellEA.d_price[2], st_SellEA.d_price[3], st_SellEA.d_price[4] )
+				);
+			}
+			i_sec = time.sec;
+#endif
+		}
+		
+		
+		// *************************************************************************
+		//	機能		： 注文量に応じた利益を得るための加算する価格[USD]を取得
+		//	注意		： なし
+		//	メモ		： なし
+		//	引数		： 注文数
+		//	返り値		： 加算する価格[USD]
+		//	参考URL		： なし
+		// **************************	履	歴	************************************
+		// 		v1.0		2021.08.05			Taka		新規
+		// *************************************************************************/
+		double get_profitAdd( int orderNum ){
+			
+			double ans = 0.0;
+			
+			/* 注文数に応じて */
+			switch( orderNum ){
+				
+				case  1:	ans = 70;		break;
+				case  2:	ans = 70;		break;
+				case  3:	ans = 125;		break;
+				case  4:	ans = 150;		break;
+				case  5:	ans = 175;		break;
+				case  6:	ans = 200;		break;
+				case  7:	ans = 225;		break;
+				case  8:	ans = 250;		break;
+				case  9:	ans = 275;		break;
+				case 10:	ans = 300;		break;
+				case 11:	ans = 325;		break;
+				case 12:	ans = 350;		break;
+				case 13:	ans = 375;		break;
+				case 14:	ans = 400;		break;
+				case 15:	ans = 425;		break;
+				case 16:	ans = 450;		break;
+				default:	ans = 500;		break;
+			}
+			
+			return ans;
+		}
+		
+		
+		// *************************************************************************
+		//	機能		： 注文量に応じたスワップでマイナスにならないための追加価格[USD]を取得
+		//	注意		： なし
+		//	メモ		： なし
+		//	引数		： 注文数
+		//	返り値		： 加算する価格[USD]
+		//	参考URL		： なし
+		// **************************	履	歴	************************************
+		// 		v1.0		2021.08.05			Taka		新規
+		// *************************************************************************/
+		double get_swapAdd( int orderNum ){
+			
+			double ans = 0.0;
+			
+			/* 注文数に応じて */
+			switch( orderNum ){
+				
+				case  1:	ans = 1;		break;
+				case  2:	ans = 2;		break;
+				case  3:	ans = 4;		break;
+				case  4:	ans = 6;		break;
+				case  5:	ans = 9;		break;
+				case  6:	ans = 12;		break;
+				case  7:	ans = 16;		break;
+				case  8:	ans = 22;		break;
+				case  9:	ans = 29;		break;
+				case 10:	ans = 38;		break;
+				case 11:	ans = 48;		break;
+				case 12:	ans = 59;		break;
+				case 13:	ans = 71;		break;
+				case 14:	ans = 86;		break;
+				case 15:	ans = 102;		break;
+				case 16:	ans = 119;		break;
+				default:	ans = 200;		break;
+			}
+			
+			return ans;
+		}
+		
+		
+		// *************************************************************************
+		//	機能		： 現在の注文から最新で設定するべきTPの値を計算する
+		//	注意		： なし
+		//	メモ		： なし
+		//	引数		： 注文の種類（売り/買いなど）
+		//	返り値		： なし
+		//	参考URL		： なし
+		// **************************	履	歴	************************************
+		// 		v1.0		2021.08.05			Taka		新規
+		// *************************************************************************/
+		double GetNewTP( ENUM_POSITION_TYPE en_type ){
+			
+			double	new_tp = 0;				// TP
+			stORDER	st_data;				// 取引データ
+			double	d_gain = 1.0;			// 演算（Buy:1.0,Sell:-1.0）
+			double	sum_volume = 0.0;		// ロット合計
+			double	sum_amount = 0.0;		// 注文量合計
+			double	d_profit = 0.0;			// 追加数値
+			double	d_swap = 0.0;			// 追加数値
+			int		i;						// loop用
+			
+			/* データコピー */
+			if( en_type == POSITION_TYPE_BUY ){		// 買い（POSITION_TYPE_BUY）
+				st_data = st_BuyEA;
+				
+			}
+			else{									// 売り（POSITION_TYPE_SELL）
+				st_data = st_SellEA;
+				d_gain = -1.0;		// 演算時に使用（利益を増やすためTP価格をマイナスする）
+			}
+			
+			/* 注文がない場合は0を返す */
+			if( st_data.i_orderNum == 0 ) { 
+				return 0; 
+			}
+			
+			/* 平均単価計算 */
+			for( i=0; i < st_data.i_orderNum; i++ ){
+				
+				sum_volume += st_data.d_volume[i];			// ロット加算
+				sum_amount += st_data.d_price[i] * st_data.d_volume[i];		// 注文量加算
+			}
+			
+			/* 利益とスワップを追加 */
+			d_profit = get_profitAdd( st_data.i_orderNum );
+			d_swap = get_swapAdd( st_data.i_orderNum );
+			new_tp = NormalizeDouble( sum_amount / sum_volume + ( d_profit + d_swap ) * d_gain , st_data.i_digits[0] );
+			
+#ifdef debug_Handler
+			/* [Debug] TPなど表示 */
+			C_logger.output_log_to_file(
+				StringFormat( "TP計算-平均単価 [売買]%d(0:buy 1:sell) [ロット合計]%f [注文量合計]%f [利益]%f [スワップ]%f [TP]%f", 
+								(int)en_type, sum_volume, sum_amount, d_profit * d_gain, d_swap * d_gain, new_tp )
+			);
+#endif
+			return new_tp;
+		}
+		
+		
+		// *************************************************************************
+		//	機能		： TPを設定する
+		//	注意		： なし
+		//	メモ		： TPが0設定の場合には何もしない
+		//	引数		： 注文の種類（売り/買いなど）、TP価格
+		//	返り値		： なし
+		//	参考URL		： なし
+		// **************************	履	歴	************************************
+		// 		v1.0		2021.08.05			Taka		新規
+		// *************************************************************************/
+		void SetTP( ENUM_POSITION_TYPE en_type, double d_tp ){
+			
+			int				i;							// loop用
+			MqlTradeRequest	request;					// 送信データ
+			MqlTradeResult	result;						// 送信結果
+			int 			total = PositionsTotal();	// 全注文
+			ulong			position_ticket;			// ポジションチケット(この関数コールすると、後はID指定不要)
+			string 			position_symbol;			// シンボル
+			ulong 			magic;						// マジックナンバー
+			ENUM_POSITION_TYPE type;					// 売買タイプ
+			int 			digits;						// 桁数
+			
+			C_logger.output_log_to_file(
+				StringFormat("OrderManager::SetTP 関数スタート [売買]%d(0:buy 1:sell) [TP]%f", 
+								(int)en_type, d_tp )
+			);
 
+			/* TPが0の指定の場合は設定しない */
+			if( d_tp == 0 ){
+				return;
+			}
+			
+			/* TPを設定 */
+			for( i = total - 1; i >= 0; i-- )
+			{
+				/* データ取得 */
+				position_ticket	= PositionGetTicket( i );		// ポジションチケット(この関数コールすると、後はID指定不要)
+				position_symbol	= PositionGetString( POSITION_SYMBOL );
+				magic			= PositionGetInteger( POSITION_MAGIC );
+				type			= (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+				digits			= (int)SymbolInfoInteger( position_symbol,SYMBOL_DIGITS );
+				
+				// EAの注文でない場合はスキップ
+				if( magic != MAGICNUM ) continue;
+				
+				// 指定されたポジションタイプでない場合はスキップ
+				if( en_type != type ) continue;
+				
+				// データクリア
+				ZeroMemory(request);
+				ZeroMemory(result);
+				
+				// 送信パラメータの設定
+				request.action    = TRADE_ACTION_SLTP;
+				request.position  = position_ticket;
+				request.symbol    = position_symbol;
+				request.sl        = 0;
+				request.tp        = NormalizeDouble( d_tp, digits );		// ポジションのTake Profit
+				request.magic     = MAGICNUM;
+					
+				// リクエストの送信
+				bool ans = OrderSend(request,result);
 
+				C_logger.output_log_to_file(
+					StringFormat("OrderManager::SetTP TP送信 [ans]%d", (int)ans)
+				);
+
+				if( ans == false ){
+					C_logger.output_log_to_file(
+						StringFormat("OrderManager::SetTP 注文送信エラー [code]%d", GetLastError())
+					);
+				}
+			}
+		}
+		
+		
 		// *************************************************************************
 		//	機能		： 最終注文した注文価格を取得する
 		//	注意		： なし
@@ -109,16 +474,14 @@ class COrderManager
 			MqlTradeResult result		= {};
 			bool ans = false;
 			
-			volume = NormalizeDouble( volume, 2 );		// 小数点以下第2位のまるめ
-			
+			/* 注文情報作成 */
 			request.action	= TRADE_ACTION_DEAL;		// 成行注文
 			request.symbol	= Symbol();					// チャートの銘柄名
+			volume = NormalizeDouble( volume, 2 );		// （下準備）小数点以下第2位のまるめ
 			request.volume	= volume;					// ロット数
 			request.type	= type;						// 売り or 買い
-			
-			/* ----------- */
-			/* 注文情報作成 */
-			/* ----------- */
+			request.deviation	= 5;					// 価格からの許容偏差
+			request.magic		= MAGICNUM;				// マジックナンバー指定
 			// 注文価格
 			if ( type == ORDER_TYPE_BUY ){			// 成行買い注文
 				
@@ -133,8 +496,6 @@ class COrderManager
 				C_logger.output_log_to_file("OrderManager::OrderTradeActionDeal OrderType error "); 
 				return;
 			}
-			request.deviation	= 5;				// 価格からの許容偏差
-			request.magic		= MAGICNUM;			// マジックナンバー指定
 			
 			/* 注文実行 */ 
 			C_logger.output_log_to_file("OrderManager::OrderTradeActionDeal  注文開始");
@@ -172,10 +533,11 @@ class COrderManager
 		// 		v1.0		2021.04.14			taji		新規
 		// *************************************************************************/
 		void OrderTradeActionCloseAll(ENUM_POSITION_TYPE req_type){
+			
 			C_logger.output_log_to_file("OrderManager::OrderTradeActionCloseAll start");
 			MqlTradeRequest request;
 			MqlTradeResult result;
-
+			
 			int total=PositionsTotal(); //　保有ポジション数  
 			C_logger.output_log_to_file(StringFormat("OrderManager::OrderTradeActionCloseAll done PositionsTotal() = %d",total));
 			//--- 全ての保有ポジションをスキャン
@@ -225,121 +587,19 @@ class COrderManager
 					}
 					//--- 決済情報の出力
 					C_logger.output_log_to_file(StringFormat("OrderManager::OrderTradeActionCloseAll Close #%I64d %s %s"
-					                                         ,position_ticket,position_symbol,EnumToString(type)));
+																,position_ticket,position_symbol,EnumToString(type)));
 					//--- リクエストの送信
 					if(!OrderSend(request,result)){
 						C_logger.output_log_to_file(StringFormat("OrderManager::OrderTradeActionCloseAll OrderSend error %d",GetLastError()));
 					}
 					//--- 操作情報 
 					C_logger.output_log_to_file(StringFormat("OrderManager::OrderTradeActionCloseAll retcode=%u  deal=%I64u  order=%I64u "
-					                                         ,result.retcode,result.deal,result.order));
+																,result.retcode,result.deal,result.order));
 					//---
 				}
 			}
 		}
-		// *************************************************************************
-		//	機能		： Calculate new TP
-		//	注意		： なし
-		//	メモ		： なし
-		//	引数		： なし
-		//	返り値		： なし
-		//	参考URL		： なし
-		// **************************	履	歴	************************************
-		// 		v1.0		2021.04.14			Taka		新規
-		// *************************************************************************/
-		double CalculateNewTP( ENUM_POSITION_TYPE req_type ){
-			int		position_num				= 0;		// 保有ポジション数
-			double	position_price_array[16]	= {0};		// 各ポジションの価格
-			double	position_volume_array[16]	= {0};		// 各ポジションのロット
-			int		position_digits_array[16]	= {0};		// 各ポジションの小数点以下の桁数
-			long	create_time_array[16]		= {0};		// 各ポジションの注文が出された時刻
-			int		total = PositionsTotal();				// 全てのポジション数取得
-			double	new_tp						=	0;		// TP
-			ulong position_ticket;							// ポジションチケット取得（コールする儀式）
-			string position_symbol;							// シンボル
-			ulong magic;									// マジックナンバー
-			ENUM_POSITION_TYPE type;						// 売買タイプ
-						
-			/* 各ポジション情報を格納 */
-			for( int i = 0; i < total; i++ ){
 				
-				position_ticket	= PositionGetTicket( i );							// ポジションチケット取得（コールする儀式）
-				position_symbol	= PositionGetString( POSITION_SYMBOL );				// シンボル
-				magic			= PositionGetInteger( POSITION_MAGIC );				// マジックナンバー
-				type	= (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);	// 売買タイプ
-				
-				// EAの場合は値格納
-				if(magic == MAGICNUM){
-					if( req_type == type ){
-						position_price_array[position_num] 	= PositionGetDouble( POSITION_PRICE_OPEN );					// オープン価格
-						position_volume_array[position_num] = PositionGetDouble( POSITION_VOLUME );						// ロット
-						position_digits_array[position_num] = (int)SymbolInfoInteger( position_symbol,SYMBOL_DIGITS );	// 小数点以下の桁数
-						create_time_array[position_num] 	= (long)PositionGetInteger(POSITION_TIME);					// 注文が出された時刻
-						position_num++;																					// 次のデータへ
-					}
-				}
-			}
-			
-			/* ポジション数がないときには何もしない */
-			if(0 == position_num){
-				//C_logger.output_log_to_file("OrderManager::CalculateNewTP [ERROR]UpdateTP Position nothing ");
-				return 0;
-			}
-			
-			/* =========== */
-			/* TPの更新処理 */
-			/* =========== */
-			int array_num = tbl_TP[position_num-1].specify_price_num;   // いくつめの注文価格に合わせるか
-			double alpha = tbl_TP[position_num-1].alpha;
-			double swap;												// スワップ
-			double profit;												// 利益
-			
-			/* スワップと利益の設定 */
-			if( position_num == 1 ) 		{ swap = 1;		profit = 70;	}
-			else if( position_num == 2 ) 	{ swap = 2;		profit = 70;	}
-			else if( position_num == 3 ) 	{ swap = 4;		profit = 125;	}
-			else if( position_num == 4 ) 	{ swap = 6;		profit = 150;	}
-			else if( position_num == 5 ) 	{ swap = 9;		profit = 175;	}
-			else if( position_num == 6 ) 	{ swap = 12;	profit = 200;	}
-			else if( position_num == 7 ) 	{ swap = 16;	profit = 225;	}
-			else if( position_num == 8 ) 	{ swap = 22;	profit = 250;	}
-			else if( position_num == 9 ) 	{ swap = 29;	profit = 275;	}
-			else if( position_num == 10 )	{ swap = 38;	profit = 300;	}
-			else if( position_num == 11 )	{ swap = 48;	profit = 325;	}
-			else if( position_num == 12 ) 	{ swap = 59;	profit = 350;	}
-			else if( position_num == 13 ) 	{ swap = 71;	profit = 375;	}
-			else if( position_num == 14 ) 	{ swap = 86;	profit = 400;	}
-			else if( position_num == 15 ) 	{ swap = 102;	profit = 425;	}
-			else if( position_num == 16 ) 	{ swap = 119;	profit = 450;	}
-			else 							{ swap = 200;	profit = 500;	}
-			
-			/* 符号反転→SELLの場合 */
-			if( req_type == POSITION_TYPE_SELL ){
-				swap = -swap;
-				profit = -profit;
-			}
-			
-			/* TP計算(平均単価ベース) */
-			double sum_volume = 0.0;
-			double sum_amount = 0.0;
-			for(int j=0; j<position_num; j++ ){
-				
-				sum_volume += position_volume_array[j];
-				sum_amount += position_price_array[j] * position_volume_array[j];
-			}
-			
-			C_logger.output_log_to_file(
-				StringFormat( "結果： #%I64d %s %s", position_num, position_symbol, EnumToString(type) )
-			);
-			
-			new_tp = NormalizeDouble( sum_amount / sum_volume + profit + swap, position_digits_array[0] );
-			
-//			C_logger.output_log_to_file( "OrderManager::CalculateNewTP " + (string)array_num + "つ目の注文価格 = " 
-//										+(string)(sum_amount / sum_volume) + " profit = " + (string)profit + " swap = " + (string)swap );
-			
-			return new_tp;
-		}
-		
 		
 		// *************************************************************************
 		//	機能		： Calculate new SL for trailing stop
@@ -397,14 +657,14 @@ class COrderManager
 			MqlTradeRequest	request;
 			MqlTradeResult	result;
 
+#ifdef AAA
 			// 新しいTPを計算する(無駄な計算しないようすべての処理を下記のfor文から外に出した)
-			double new_tp = CalculateNewTP( req_type );
+//			double new_tp = CalculateNewTP( req_type );
 //			double new_sl = CalculateNewSL( req_type, new_tp);
 			if(new_tp == 0){
 				//C_logger.output_log_to_file(StringFormat("OrderManager::UpdateSLTP req_type = %d no position error",req_type));
 				return;
 			}
-#ifdef AAA
 			// SLTPの更新処理
 			int total=PositionsTotal();
 			//C_logger.output_log_to_file(StringFormat("OrderManager::UpdateSLTP ★SL TPセット done PositionsTotal() = %d ",total));

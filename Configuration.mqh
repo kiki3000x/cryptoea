@@ -7,13 +7,15 @@
 // 		v1.0		2021.04.14			Taji		新規
 // 		v1.1		2021.08.02			Taka		Configuration切り替えリファクタ
 // *************************************************************************/
+// 多重コンパイル抑止
+#ifndef _CONFIG_H
+#define _CONFIG_H
 
 //**************************************************
 // Configurationパターン切り替え（適用しない方はコメントアウト）
 //**************************************************
 #define CONFICRATION_PATERN_TAKA			// TAKA用パラメータ適用
 //#define CONFICRATION_PATERN_TAJI			// TAJI用パラメータ適用
-
 
 
 #ifdef CONFICRATION_PATERN_TAKA
@@ -32,6 +34,7 @@
 //#define debug_CheckerException		// 稼働チェック
 //#define debug_Configuration			// 設定
 #define debug_Handler					// 動作管理
+#define debug_OrderManager				// 取引管理
 
 /* 一般 */
 #define MAGICNUM						345675	// デフォルト
@@ -67,9 +70,10 @@
 //**************************************************
 // ロット数に関する定義、リスト、カスタム関数
 //**************************************************
-#define BASE_LOT (0.01)			//システム上の最小ロット数
+#define BASE_LOT (0.01)			// システム上の最小ロット数
 #define MAX_ORDER_NUM 7			// 注文追加数制限 //★デフォルト
-#define MAX_LOT_LIST_NUM 16		// ロットリストのリスト数
+#define MAX_LOT_LIST_NUM 16		// EAで管理する片側注文（BUY/SELL）の最大注文数
+#define MAX_EA_NUM	(16)		// EAで管理する片側注文（BUY/SELL）の最大注文数
 
 //デフォルト注文時のBaseLotに対する倍率List
 double lot_list[]={
@@ -552,5 +556,7 @@ const long account_array[] = {
 //**************************************************
 //#define debug_CheckerException		// 稼働チェック
 
+
+#endif
 
 #endif

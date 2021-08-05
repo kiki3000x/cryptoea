@@ -40,6 +40,7 @@ class CHandler
 		CDisplayInfo*       C_DisplayInfo;
 		CCheckerException*  C_CheckerException;
 		CCheckerBars*       C_CheckerBars;
+		bool				b_fin1stOninit;			// Oninit関数が初回実行の完了(false:未実行、true:実行)
 	
 		//プライベートコンストラクタ(他のクラスにNewはさせないぞ！！！)
 		CHandler(){
@@ -48,6 +49,7 @@ class CHandler
 			C_DisplayInfo = CDisplayInfo::GetDisplayInfo();
 			C_CheckerException = CCheckerException::GetCheckerException();
 			C_CheckerBars = CCheckerBars::GetCheckerBars();
+			b_fin1stOninit = false;
 		}
 
 		//配列番号へ変換
@@ -75,31 +77,52 @@ class CHandler
 		}
 
 		// *************************************************************************
-		//	機能		： 指定されたタイプの最後に注文したポジションの価格を取得する
+		//	機能		： 期限切れ判断関数
+		//	注意		： なし
+		//	メモ		： タイマー関数内でコール
+		//	引数		： なし
+		//	返り値		： なし
+		//	参考URL		： なし
+		// **************************	履	歴	************************************
+		// 		v1.0		2021.04.14			Taji		新規
+		// *************************************************************************/
+		void Chk_Expired() {
+			// 有効期限切れ
+			if( C_CheckerException.Chk_Expired() == false ){
+				//C_logger.output_log_to_file("フェードアウトモード移行");
+				GlobalVariableSet("terminalg_fadeout_mode",true);
+			}	
+		}
+		
+		
+		// *************************************************************************
+		//	機能		： 指定タイプの最後に注文された価格を取得する
 		//	注意		： なし
 		//	メモ		： なし
-		//	引数		： なし
+		//	引数		： 注文の種類（売り/買いなど）
 		//	返り値		： なし
 		//	参考URL		： なし
 		// **************************	履	歴	************************************
 		// 		v1.0		2021.04.14			taji		新規
 		// *************************************************************************/
 		double get_latestOrderOpenPrice( ENUM_POSITION_TYPE req_type ){
+			
 			return C_OrderManager.LatestOrderOpenPrice( req_type );
 		}
-
+		
+		
 		// *************************************************************************
-		//	機能		： 初期化処理
+		//	機能		： グローバル変数を初期化
 		//	注意		： なし
 		//	メモ		： なし
-		//	引数		： ノーポジの場合は最小ロット建てる、ポジションある場合は前回ポジション値更新、TPも更新
+		//	引数		： なし
 		//	返り値		： なし
 		//	参考URL		： なし
 		// **************************	履	歴	************************************
-		// 		v1.0		2021.04.14			Taji		新規
+		// 		v1.0		2021.08.03			taka		新規
 		// *************************************************************************/
-		void OnInit(){
-
+		void initGlobalVal( void ){
+			
             //グローバル変数の掃除
 			if( true == GlobalVariableCheck("tg_StopOrderJudge_range") ){
 				GlobalVariableDel("tg_StopOrderJudge_range");
@@ -157,8 +180,38 @@ class CHandler
 			if( false == GlobalVariableCheck("tg_SellOrderStopLimitMinPrice")){
 				GlobalVariableSet("tg_SellOrderStopLimitMinPrice",0);
 			}
-
-
+		}
+		
+		
+		// *************************************************************************
+		//	機能		： 初期化処理
+		//	注意		： なし
+		//	メモ		： なし
+		//	引数		： ノーポジの場合は最小ロット建てる、ポジションある場合は前回ポジション値更新、TPも更新
+		//	返り値		： なし
+		//	参考URL		： なし
+		// **************************	履	歴	************************************
+		// 		v1.0		2021.04.14			Taji		新規
+		// 		v1.1		2021.08.04			Taka		2回目起動以降は何もしないようにする
+		// *************************************************************************/
+		void OnInit(){
+			
+			static bool b_first = false;		// 初回判定フラグ(false:初回、true:2回目～)
+			
+			// 起動ログ
+			C_logger.output_log_to_file( 
+				StringFormat("Handler::OnInit 初期化の処理開始 [初回]%d (0:初回、1:2回目～)", (int)b_first ) 
+			);
+			
+			/* これ以降は初回立ち上がり時のみ実行とする */
+			if( b_first == true ){
+				
+				return;		// 2回目以降は何もしない
+			} 
+			
+			// グローバル変数の初期化
+			initGlobalVal();
+			
 			// 口座番号確認
 			if( C_CheckerException.Chk_Account() == false ){
 				C_logger.output_log_to_file("Handler::OnInit 起動対象ではない -> EA終了");
@@ -166,115 +219,29 @@ class CHandler
 					ExpertRemove();					// OnDeinit()をコールしてEA終了処理
 				}
 			}
-
-			//カスタムテーブル処理(Configuration.mqh)
+			
+			// カスタムテーブル処理(Configuration.mqh)
 			ConfigCustomizeLotList();
 			ConfigCustomizeDiffPriceOrderList();
 			ConfigCustomizeTPTable();
-
-			//test 基本は各test項目をif(0)で制御
+			
+			// 単体テスト（各test項目をif(0)で制御）
 			if(0){
 				C_OrderManager.unit_test();
 			}
 			
-			//TPを改めてスキャン
-			C_OrderManager.UpdateSLTP( POSITION_TYPE_BUY );
-			C_OrderManager.UpdateSLTP( POSITION_TYPE_SELL );
-		}
-
-		// *************************************************************************
-		//	機能		：BUYまたはSELLがノーポジの場合,新規最小ロットを建てる、TPの最新アップデート
-		//	注意		： なし
-		//	メモ		： タイマー関数内でコール
-		//	引数		： なし
-		//	返り値		： なし
-		//	参考URL		： なし
-		// **************************	履	歴	************************************
-		// 		v1.0		2021.04.14			Taji		新規
-		// *************************************************************************/
-		void OrderForNoPosition() {
-			double base_lot=GlobalVariableGet("terminalg_lot");
+			// TPスキャン
+//			C_OrderManager.UpdateSLTP( POSITION_TYPE_BUY );
+//			C_OrderManager.UpdateSLTP( POSITION_TYPE_SELL );
 			
-			//ノーポジの場合のみ新規ロットの最小値分建てを行う
-			if(0 == get_latestOrderOpenPrice(POSITION_TYPE_BUY) ){
-				if( true == GlobalVariableGet("terminalg_fadeout_mode")){
-					//フェードアウトモード時は注文しない
-				}else if( GlobalVariableGet("tg_BuyOrderStopLimitMaxPrice") < SymbolInfoDouble(Symbol(),SYMBOL_ASK) ){
-					//上限値越え時は注文しない
-				}else{
-					if( C_OrderManager.get_TotalOrderNum(POSITION_TYPE_BUY) < MAX_ORDER_NUM ){
-						C_logger.output_log_to_file("Handler::OrderForNoPosition BUYで新規ロットの最小値分建てを行う");
-						C_OrderManager.OrderTradeActionDeal( base_lot, ORDER_TYPE_BUY);
-					}
-				}
-			}
-
-			if(0 == get_latestOrderOpenPrice(POSITION_TYPE_SELL) ){
-				if( true == GlobalVariableGet("terminalg_fadeout_mode")){
-					//フェードアウトモード時は注文しない
-				}else if( GlobalVariableGet("tg_SellOrderStopLimitMinPrice") > SymbolInfoDouble(Symbol(),SYMBOL_BID) ){
-					//下限値越え時は注文しない
-				}else{
-					if( C_OrderManager.get_TotalOrderNum(POSITION_TYPE_SELL) < MAX_ORDER_NUM ){
-						C_logger.output_log_to_file("Handler::OrderForNoPosition SELLで新規ロットの最小値分建てを行う");
-						C_OrderManager.OrderTradeActionDeal( base_lot, ORDER_TYPE_SELL);
-					}
-				}
-			}
-			C_OrderManager.UpdateSLTP( POSITION_TYPE_BUY );
-			C_OrderManager.UpdateSLTP( POSITION_TYPE_SELL );
-		}
-
-		// *************************************************************************
-		//	機能		： ポジション数取得
-		//	注意		： なし
-		//	メモ		： なし
-		//	引数		： なし
-		//	返り値		： なし
-		//	参考URL		： なし
-		// **************************	履	歴	************************************
-		// 		v1.0		2021.04.14			Taka		新規
-		// *************************************************************************/
-		int CalculatePositionNum( ENUM_POSITION_TYPE req_type ){
-			int position_num=0; //　指定されたタイプの保有ポジション数
+			// 1回しか実行させないようにする
+			b_first = true;
+			b_fin1stOninit = true;		// Oninit関数が初回実行の完了(false:未実行、true:実行)
 			
-			C_logger.output_log_to_file("Handler::CalculatePositionNum start");
-
-			//全てのポジション数取得
-			int total=PositionsTotal();
-			for(int i=0; i<total; i++)
-			{
-				ulong position_ticket	= PositionGetTicket( i );
-				ulong magic			= PositionGetInteger( POSITION_MAGIC );
-				ENUM_POSITION_TYPE type=(ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
-			
-				if(magic == MAGICNUM){
-					if( req_type == type ){
-						position_num++;
-					}
-				}
-			}
-			return position_num;
+			C_logger.output_log_to_file("Handler::OnInit 初期化の処理終了");		// ログ
 		}
-
-		// *************************************************************************
-		//	機能		： 期限切れ判断関数
-		//	注意		： なし
-		//	メモ		： タイマー関数内でコール
-		//	引数		： なし
-		//	返り値		： なし
-		//	参考URL		： なし
-		// **************************	履	歴	************************************
-		// 		v1.0		2021.04.14			Taji		新規
-		// *************************************************************************/
-		void Chk_Expired() {
-			// 有効期限切れ
-			if( C_CheckerException.Chk_Expired() == false ){
-				//C_logger.output_log_to_file("フェードアウトモード移行");
-				GlobalVariableSet("terminalg_fadeout_mode",true);
-			}	
-		}
-
+		
+		
 		// *************************************************************************
 		//	機能		： Timer関数
 		//	注意		： なし
@@ -288,7 +255,84 @@ class CHandler
 		void OnTimer(){
 			
 		}
+		
+		
+		// *************************************************************************
+		//	機能		： OnTickの取引処理
+		//	注意		： なし
+		//	メモ		： なし
+		//	引数		： 注文の種類（売り/買いなど）
+		//	返り値		： なし
+		//	参考URL		： なし
+		// **************************	履	歴	************************************
+		// 		v1.0		2021.08.04			Taka		新規
+		// *************************************************************************/
+		void OnTickPosition( ENUM_POSITION_TYPE en_pos ){
+			
+			double	base_lot = GlobalVariableGet("terminalg_lot");		// 初期ロット取得
+			double	nowPrice;											// 現在価格
+			double	lastPrice;											// 最終価格
+			double	diff;												// 現在価格と最後の注文との差額を計算
+			double	diffNextPrice;										// 次の値段までの差分
+			int 	TotalOrderNum;										// 全注文数
+			ENUM_ORDER_TYPE	en_order;									// 注文方法
+			double	lot = 0.0;											// 注文量
+			
+			/* 注文数取得 */
+			TotalOrderNum = C_OrderManager.get_TotalOrderNum( en_pos );
 
+			/* 注文処理 */
+			if( TotalOrderNum == 0 ){		// 新規注文
+				
+				/* 取引に応じた注文（BUY or SELL） */
+				if( en_pos == POSITION_TYPE_BUY ){
+					
+					C_logger.output_log_to_file("Handler::OrderNoPosition  Buyの1ピン目");
+					C_OrderManager.OrderTradeActionDeal( base_lot, ORDER_TYPE_BUY);		// 新規注文
+				}
+				else if( en_pos == POSITION_TYPE_SELL ){
+					
+					C_logger.output_log_to_file("Handler::OrderNoPosition  Sellの1ピン目");
+					C_OrderManager.OrderTradeActionDeal( base_lot, ORDER_TYPE_SELL);	// 新規注文
+				}
+				C_logger.output_log_to_file( 
+					StringFormat("[差分1]%d, [type]%d (0:buy 1:sell)", diff_price_order[0], (int)en_pos ) 
+				);
+			}
+			else{							// 2ピン目～注文
+				
+				/* 差分確認 */
+				lastPrice = get_latestOrderOpenPrice(en_pos);				// 最終価格
+				diffNextPrice = diff_price_order[TotalOrderNum - 1];		// 次の価格との差
+				// 現在価格
+				if( en_pos == POSITION_TYPE_BUY ){		// 買い取引
+					
+					nowPrice	= SymbolInfoDouble( Symbol(), SYMBOL_ASK );	// BUYの現在価格
+					diff 		= lastPrice - nowPrice;						// 現在価格との差
+					en_order	= ORDER_TYPE_BUY;							// BUYの注文
+				}
+				else{									// 売り取引
+					nowPrice	= SymbolInfoDouble( Symbol(), SYMBOL_BID );	// SELLの現在価格
+					diff 		= nowPrice - lastPrice;						// 現在価格との差
+					en_order	= ORDER_TYPE_SELL;							// SELLの注文
+				}
+				
+#ifdef debug_Handler
+				C_logger.output_log_to_file( StringFormat("[売買]%d(0:buy 1:sell) [現在との価格差]%d [次の価格差]%d", (int)en_pos, (int)diff, (int)diffNextPrice ) );
+				C_logger.output_log_to_file( StringFormat("[現在価格]%d [最終価格]%d", (int)nowPrice, (int)lastPrice ) );
+#endif
+				/* 所定のピン幅下がったら追加注文 */
+				if( diff > diffNextPrice ){
+					
+					lot = base_lot * MathPow( 1.278, TotalOrderNum - 1 );	// 注文量 
+					C_OrderManager.OrderTradeActionDeal( lot, en_order );	// 追加注文
+					C_logger.output_log_to_file( StringFormat("注文実施 [売買]%d(0:buy 1:sell) [lot]%f", lot ) );
+				}
+			}
+			C_logger.output_log_to_file( StringFormat("全注文数　=　%d", TotalOrderNum ) );		// BUY数
+		}
+		
+		
 		// *************************************************************************
 		//	機能		： 価格更新ごとに実行される関数
 		//	注意		： なし
@@ -298,32 +342,61 @@ class CHandler
 		//	参考URL		： なし
 		// **************************	履	歴	************************************
 		// 		v1.0		2021.04.14			Taji		新規
+		// 		v1.1		2021.08.04			Taka		自動売買のチェック許可がない場合の処理を追加
 		// *************************************************************************/
 		void OnTick(){
+			
+			if( b_fin1stOninit == false ) return;	// Onintが完了するまで処理をスタートしない 
+			
 			//C_DisplayInfo.UpdateOrderInfo();		// 注文情報を更新
-			C_DisplayInfo.ShowData( C_CheckerException.Get_chkAccountState() );				// コメントをチャート上に表示
 			
-			double base_lot = GlobalVariableGet("terminalg_lot");		// 初期ロット取得
+			/* チャート上にコメントを表示 */
+			C_DisplayInfo.ShowData( C_CheckerException.Get_chkAccountState() );
 			
-			//日付チェック、フェードアウトモード移行
+			/* 日付チェック（有効期限外ならばフェードアウトモード移行） */
 			Chk_Expired();
 			
+			/* 自動売買許可されていないかチェック */
+//#ifdef AAA
+			if( TerminalInfoInteger( TERMINAL_TRADE_ALLOWED ) == false ){		// 「アルゴリズム取引ボタン」OFFなら実行しない
+				
+				C_logger.output_log_to_file("OnTick: アルゴリズム取引ボタンOFF");
+				return;
+			}
+			if( MQLInfoInteger( MQL_TRADE_ALLOWED ) == false ){	// 自動売買の許可のチェックが入っていない
+			
+				C_logger.output_log_to_file("OnTick: 自動売買許可のチェックなし");
+				return;
+			}
+//#endif
+			/* 証拠金維持率確認 */
+			// 維持率が低ければ、取引増やさない
+			
+			/* 急激な値動き確認 */
+			// 急騰急落の場合には注文を行わない
+
+			/* 取引処理 */
+			OnTickPosition( POSITION_TYPE_BUY );		// Buyの取引
+			OnTickPosition( POSITION_TYPE_SELL );		// Sellの取引
+
+
+
+#ifdef AAA		
 			C_OrderManager.UpdateSLTP( POSITION_TYPE_BUY );
 			C_OrderManager.UpdateSLTP( POSITION_TYPE_SELL );
-			
-			//証拠金維持率チェック(500％下回ったら取引しない)
-			if( AccountInfoDouble(ACCOUNT_MARGIN_LEVEL) != 0){//ポジションが0の時は維持率0になる
-				if( AccountInfoDouble(ACCOUNT_MARGIN_LEVEL) < MINIMUN_ACCOUNT_MARGIN_LEVEL ){
+	
+			// 証拠金維持率チェック (所定のパーセンテージ下回ったら取引しない)
+			if( AccountInfoDouble( ACCOUNT_MARGIN_LEVEL ) != 0 ){			// ポジションが0の時は維持率0になる
+				if( AccountInfoDouble( ACCOUNT_MARGIN_LEVEL ) < MINIMUN_ACCOUNT_MARGIN_LEVEL ){
 					//C_logger.output_log_to_file(StringFormat("証拠金維持率　=　%f",AccountInfoDouble(ACCOUNT_MARGIN_LEVEL)));
 					return;
 				}
 			}
-
-			//急激な値幅の有無チェック。急な上場時はSELLを入れない。急な下降時はBUYを入れない
+			
+			// 急激な値幅の有無チェック。急な上場時はSELLを入れない。急な下降時はBUYを入れない
 			int deal_recomment;
-			//int deal_recomment_for_super;
 			int diff_price_for_order = BASE_DIFF_PRICE_TO_ORDER2;
-			deal_recomment = C_CheckerBars.Chk_preiod_m1_bars();
+//			deal_recomment = C_CheckerBars.Chk_preiod_m1_bars();
 			//deal_recomment_for_super = C_CheckerBars.Chk_preiod_m1_bars_stoporder();//壮大な過剰変動時対応
 
 			//#######################################ロングの処理start##################################################
@@ -342,8 +415,8 @@ class CHandler
 						if( C_OrderManager.get_TotalOrderNum(POSITION_TYPE_BUY) < MAX_ORDER_NUM ){
 							int num = CalculatePositionNum( POSITION_TYPE_BUY );
 							C_logger.output_log_to_file(StringFormat("Handler::OnTick　注文判断変化量=%d 直前ポジと現在価格の差(ASK)=%f lot=%f num=%d",
-																	diff_price_for_order, ask_diff,lot_list[num] * base_lot, num));
-							C_OrderManager.OrderTradeActionDeal( lot_list[num] * base_lot, ORDER_TYPE_BUY);
+																	diff_price_for_order, ask_diff, lot_list[num] * base_lot, num));
+							C_OrderManager.OrderTradeActionDeal( lot_list[num] * base_lot * 1.278, ORDER_TYPE_BUY);
 							//TP更新
 							C_OrderManager.UpdateSLTP( POSITION_TYPE_BUY );
 						}
@@ -374,7 +447,7 @@ class CHandler
 							int num = CalculatePositionNum( POSITION_TYPE_SELL );
 							C_logger.output_log_to_file(StringFormat("Handler::OnTick　注文判断変化量=%d 直前ポジと現在価格の差(BID)=%f lot=%f num=%d",
 																	diff_price_for_order, bid_diff, lot_list[num] * base_lot, num));
-							C_OrderManager.OrderTradeActionDeal( lot_list[num] * base_lot, ORDER_TYPE_SELL);
+							C_OrderManager.OrderTradeActionDeal( lot_list[num] * base_lot * 1.278, ORDER_TYPE_SELL);
 							//TP更新
 							C_OrderManager.UpdateSLTP( POSITION_TYPE_SELL );
 						} 
@@ -388,6 +461,7 @@ class CHandler
 				}
 			}
 			//#######################################ショートの処理end######################################################
+#endif
 		}
 		// *************************************************************************
 		//	機能		： Trunsaction更新ごとに実行される関数

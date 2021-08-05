@@ -28,7 +28,24 @@
 //**************************************************
 // 定義（define）
 //**************************************************
-#define MAGICNUM 345675//デフォルト
+/* デバッグ文字表示（表示しない場合はコメントアウト） */
+//#define debug_CheckerException		// 稼働チェック
+//#define debug_Configuration			// 設定
+#define debug_Handler					// 動作管理
+
+/* 一般 */
+#define MAGICNUM						345675	// デフォルト
+#define MINIMUN_ACCOUNT_MARGIN_LEVEL	1000	// 取引可能な最低証拠金維持率(％)
+
+/* 急激な価格変動の検知時に、新規注文を入れない */
+#define DIFF_MINUTES_1				200		// 1分の所定(250USD/60000USD)の値幅
+#define DIFF_MINUTES_3				250		// 3分の所定(350USD/60000USD)の値幅
+#define DIFF_MINUTES_CUSTOM			350		// 10分の所定(500USD/60000USD)の値幅
+#define NUM_MINUTES_CUSTOM			25		// カスタムチェックの期間(この値はチェックする最大の値にすること ※ 最大配列Noに使っているためOutOfRangeErrorの原因になります）
+#define RECOMMEND_NO_PROBREM		0		// 問題なし
+#define RECOMMEND_STOP_BUY_DEAL		1		// BUYの取引一時停止
+#define RECOMMEND_STOP_SELL_DEAL	2 		// SELLの取引一時停止
+
 
 //**************************************************
 // 列挙体（enum）
@@ -50,19 +67,18 @@
 //**************************************************
 // ロット数に関する定義、リスト、カスタム関数
 //**************************************************
-#define BASE_LOT (0.01)//システム上の最小ロット数
-//#define MAX_ORDER_NUM 7 // 注文追加数制限 //★変更Taji
-#define MAX_ORDER_NUM 7 // 注文追加数制限 //★デフォルト
-#define MAX_LOT_LIST_NUM 16 // ロットリストのリスト数
+#define BASE_LOT (0.01)			//システム上の最小ロット数
+#define MAX_ORDER_NUM 7			// 注文追加数制限 //★デフォルト
+#define MAX_LOT_LIST_NUM 16		// ロットリストのリスト数
 
 //デフォルト注文時のBaseLotに対する倍率List
 double lot_list[]={
-	1,//注文１つ目のベースロット(m_base_lot)に対する倍率
-	2,//注文２つ目のベースロット(m_base_lot)に対する倍率
-	3,//注文３つ目のベースロット(m_base_lot)に対する倍率
-	4,//注文４つ目のベースロット(m_base_lot)に対する倍率
-	5,//注文５つ目のベースロット(m_base_lot)に対する倍率
-	6,//注文６つ目のベースロット(m_base_lot)に対する倍率
+	1,	//注文１つ目のベースロット(m_base_lot)に対する倍率
+	2,	//注文２つ目のベースロット(m_base_lot)に対する倍率
+	3,	//注文３つ目のベースロット(m_base_lot)に対する倍率
+	4,	//注文４つ目のベースロット(m_base_lot)に対する倍率
+	5,	//注文５つ目のベースロット(m_base_lot)に対する倍率
+	6,	//注文６つ目のベースロット(m_base_lot)に対する倍率
 	7,
 	8,
 	9,
@@ -85,87 +101,59 @@ void ConfigCustomizeLotList(){
 //**************************************************
 // ピン幅に関する定義、リスト、カスタム関数
 //**************************************************
-//前回注文価格との変動差分を定義。次の注文を実施する判断値と使用。
+// 前回注文価格との変動差分を定義。次の注文を実施する判断値と使用。
 #define MAX_DIFF_PRICE_LIST_NUM 16 // ピン幅リストのリスト数
+
+//ピン幅リスト
 #define BASE_DIFF_PRICE 50
 #define BASE_DIFF_PRICE_TO_ORDER1		120		// 追加注文判定用基準変動価格1
 #define BASE_DIFF_PRICE_TO_ORDER2		BASE_DIFF_PRICE_TO_ORDER1+BASE_DIFF_PRICE		// 追加注文判定用基準変動価格2
-#define BASE_DIFF_PRICE_TO_ORDER3		BASE_DIFF_PRICE_TO_ORDER2+BASE_DIFF_PRICE	
-#define BASE_DIFF_PRICE_TO_ORDER4		BASE_DIFF_PRICE_TO_ORDER3+BASE_DIFF_PRICE	
-#define BASE_DIFF_PRICE_TO_ORDER5		BASE_DIFF_PRICE_TO_ORDER4+BASE_DIFF_PRICE
-#define BASE_DIFF_PRICE_TO_ORDER6		BASE_DIFF_PRICE_TO_ORDER5+BASE_DIFF_PRICE	
-#define BASE_DIFF_PRICE_TO_ORDER7		BASE_DIFF_PRICE_TO_ORDER6+BASE_DIFF_PRICE	
-#define BASE_DIFF_PRICE_TO_ORDER8		BASE_DIFF_PRICE_TO_ORDER7+BASE_DIFF_PRICE	
-#define BASE_DIFF_PRICE_TO_ORDER9		BASE_DIFF_PRICE_TO_ORDER8+BASE_DIFF_PRICE
-#define BASE_DIFF_PRICE_TO_ORDER10		BASE_DIFF_PRICE_TO_ORDER9+BASE_DIFF_PRICE
-#define BASE_DIFF_PRICE_TO_ORDER11		BASE_DIFF_PRICE_TO_ORDER10+BASE_DIFF_PRICE
-#define BASE_DIFF_PRICE_TO_ORDER12		BASE_DIFF_PRICE_TO_ORDER11+BASE_DIFF_PRICE
-#define BASE_DIFF_PRICE_TO_ORDER13		BASE_DIFF_PRICE_TO_ORDER12+BASE_DIFF_PRICE
-#define BASE_DIFF_PRICE_TO_ORDER14		BASE_DIFF_PRICE_TO_ORDER13+BASE_DIFF_PRICE
-#define BASE_DIFF_PRICE_TO_ORDER15		BASE_DIFF_PRICE_TO_ORDER14+BASE_DIFF_PRICE
-#define BASE_DIFF_PRICE_TO_ORDER16		BASE_DIFF_PRICE_TO_ORDER15+BASE_DIFF_PRICE
-
-//ピン幅リスト
-int diff_price_order[] = {
-	BASE_DIFF_PRICE_TO_ORDER1,//現在注文が1つの場合で、2つ目の注文をかける基準となる変動値.
-	BASE_DIFF_PRICE_TO_ORDER2,//現在注文が2つの場合で、3つ目の注文をかける基準となる変動値.
-	BASE_DIFF_PRICE_TO_ORDER3,//現在注文が3つの場合で、4つ目の注文をかける基準となる変動値.
-	BASE_DIFF_PRICE_TO_ORDER4,//現在注文が4つの場合で、5つ目の注文をかける基準となる変動値.
-	BASE_DIFF_PRICE_TO_ORDER5,//現在注文が5つの場合で、6つ目の注文をかける基準となる変動値.
-	BASE_DIFF_PRICE_TO_ORDER6,//現在注文が6つの場合で、7つ目の注文をかける基準となる変動値.
-	BASE_DIFF_PRICE_TO_ORDER7,//現在注文が7つの場合で、8つ目の注文をかける基準となる変動値.
-	BASE_DIFF_PRICE_TO_ORDER8,//現在注文が8つの場合で、9つ目の注文をかける基準となる変動値.
-	BASE_DIFF_PRICE_TO_ORDER9,//現在注文が9つの場合で、10つ目の注文をかける基準となる変動値.
-	BASE_DIFF_PRICE_TO_ORDER10,
-	BASE_DIFF_PRICE_TO_ORDER11,
-	BASE_DIFF_PRICE_TO_ORDER12,
-	BASE_DIFF_PRICE_TO_ORDER13,
-	BASE_DIFF_PRICE_TO_ORDER14,
-	BASE_DIFF_PRICE_TO_ORDER15,
-	BASE_DIFF_PRICE_TO_ORDER16
+int diff_price_order[] = {			// 暫定で初期値入れています（ConfigCustomizeDiffPriceOrderList()で最終値を設定）
+	BASE_DIFF_PRICE + 120,			// 01-02ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 2,		// 02-03ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 3,		// 03-04ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 4,		// 04-05ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 5,		// 05-06ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 6,		// 06-07ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 7,		// 07-08ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 8,		// 08-09ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 9,		// 09-10ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 10,		// 10-11ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 11,		// 11-12ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 12,		// 12-13ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 13,		// 13-14ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 14,		// 14-15ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 15,		// 15-16ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 16,		// 16-17ピン間の価格差
 };
 
 //ピン幅リストのカスタマイズ(Handlerのinitでコール)
 void ConfigCustomizeDiffPriceOrderList(){
-	Print("ConfigCustomizeDiffPriceOrderList start");
+
+	double d_base = (double)AM_Averaging_1st_width;
 	
-	// ポイント：極力4ピン目を打たせないようにする
-	// 数値は、1BTC約550～650万円での値
-	// 標準で6ピンまでの耐え幅 4200USD(400 + 500 + 1000 + 1500 + 1800) → 約50万円程度
-	for ( int i =0; i < MAX_DIFF_PRICE_LIST_NUM; i++ ){
-		
-		// ピン幅設定
-		switch( i ){
-			
-			case 0:		// [0]: 2ピン目（1-2ピン間の価格差）
-				diff_price_order[i] = 450;
-				break;
-
-			case 1:		// [1]: 3ピン目（2-3ピン間の価格差）
-				diff_price_order[i] = 600;
-				break;
-
-			case 2:		// [2]: 4ピン目（3-4ピン間の価格差）
-				diff_price_order[i] = 1300;
-				break;
-
-			case 3:		// [3]: 5ピン目（4-5ピン間の価格差）
-				diff_price_order[i] = 1600;
-				break;
-			
-			case 4:		// [4]: 6ピン目（5-6ピン間の価格差）
-			case 5:		// [5]: 7ピン目（6-7ピン間の価格差）
-				diff_price_order[i] = 2300;
-				break;
-				
-			default:	// [5以降]: 8ピン目～
-				diff_price_order[i] = 2500;
-				break;
-		}
+	/* 値幅を設定 */
+	diff_price_order[0] = (int)NormalizeDouble( d_base * 1.000, 0 );		// 1-2ピン間の価格差
+	diff_price_order[1] = (int)NormalizeDouble( d_base * 1.375, 0 );		// 2-3ピン間の価格差
+	diff_price_order[2] = (int)NormalizeDouble( d_base * 1.750, 0 );		// 3-4ピン間の価格差
+	diff_price_order[3] = (int)NormalizeDouble( d_base * 2.125, 0 );		// 4-5ピン間の価格差
+	diff_price_order[4] = (int)NormalizeDouble( d_base * 2.500, 0 );		// 5-6ピン間の価格差
+	diff_price_order[5] = (int)NormalizeDouble( d_base * 2.875, 0 );		// 6-7ピン間の価格差
+	diff_price_order[6] = (int)NormalizeDouble( d_base * 3.250, 0 );		// 7-8ピン間の価格差
+	diff_price_order[7] = (int)NormalizeDouble( d_base * 4.250, 0 );		// 8-9ピン間の価格差
+	diff_price_order[8] = (int)NormalizeDouble( d_base * 5.250, 0 );		// 9-10ピン間の価格差
+	diff_price_order[9] = (int)NormalizeDouble( d_base * 5.250, 0 );		// 10-ピン間の価格差
+	
+	for ( int i =10; i < MAX_DIFF_PRICE_LIST_NUM; i++ ){
+		diff_price_order[i] = (int)NormalizeDouble( d_base * 5.250, 0 );	// 11-ピン間の価格差
 	}
-	return;
-
-	Print("ConfigCustomizeDiffPriceOrderList end");
+	
+#ifdef debug_Configuration
+	for ( int i =0; i < MAX_DIFF_PRICE_LIST_NUM; i++ ){
+		Print(i,"	",diff_price_order[i]);
+	}
+#endif
+	
 	return;
 }
 
@@ -212,18 +200,7 @@ void ConfigCustomizeTPTable(){
 //**************************************************
 // 値幅対応用定義、リスト
 //**************************************************
-//■急激な価格変動の検知時に、新規注文を入れない
-//・1分の所定(250USD/60000USD)の値幅
-#define DIFF_MINUTES_1 200
-//・3分の所定(350USD/60000USD)の値幅
-#define DIFF_MINUTES_3 250
-//・10分の所定(500USD/60000USD)の値幅
-#define DIFF_MINUTES_CUSTOM 350
-#define NUM_MINUTES_CUSTOM 25 //カスタムチェックの期間(デフォルト10分)この値はチェックする最大の値にすること。最大配列Noに使っているためOutOfRangeErrorの原因になります
 
-#define RECOMMEND_NO_PROBREM 0 //問題なし
-#define RECOMMEND_STOP_BUY_DEAL 1 //BUYの取引一時停止
-#define RECOMMEND_STOP_SELL_DEAL 2 //SELLの取引一時停止
 
 
 //**************************************************
@@ -236,7 +213,7 @@ void ConfigCustomizeTPTable(){
 //**************************************************
 // 有効期限の設定
 //**************************************************
-#define EA_START_DATE	"2021.04.01 00:00"		// EA利用開始日時、※ 期間外はフェードアウトモードへ移行
+#define EA_START_DATE	"2020.04.01 00:00"		// EA利用開始日時、※ 期間外はフェードアウトモードへ移行
 #define EA_END_DATE		"2021.08.31 23:59"		// EA利用終了日時、※ 期間外はフェードアウトモードへ移行
 
 
@@ -254,18 +231,6 @@ const long account_array[] = {
 	1257701,		// 20210802
 	1257731,		// 20210803
 };
-
-
-//**************************************************
-// 機能指定数値
-//**************************************************
-#define MINIMUN_ACCOUNT_MARGIN_LEVEL 1000 //取引可能な最低証拠金維持率(％)
-
-
-//**************************************************
-// デバッグ文字表示（表示しない場合はコメントアウト）
-//**************************************************
-//#define debug_CheckerException		// 稼働チェック
 
 
 

@@ -13,9 +13,9 @@
 
 CHandler* C_Handler = CHandler::GetHandler();
 CLogger*  C_logger = CLogger::GetLog();
-//+----------------------------------------------------------- -------+
+//+------------------------------------------------------------------+
 //| Expert initialization function                                   |
-//+------------------6------------------------------------------------+
+//+------------------------------------------------------------------+
 int OnInit(){
 	C_Handler.OnInit();
 	return(INIT_SUCCEEDED);
@@ -27,7 +27,7 @@ void OnDeinit(const int reason){
 	C_Handler.OnDeinit(reason);
 	//--- destroy timer
 	EventKillTimer();
- }
+}
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
 //+------------------------------------------------------------------+

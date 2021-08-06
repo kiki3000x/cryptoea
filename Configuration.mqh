@@ -38,7 +38,6 @@
 
 /* 一般 */
 #define MAGICNUM						345675	// デフォルト
-#define MINIMUN_ACCOUNT_MARGIN_LEVEL	1000	// 取引可能な最低証拠金維持率(％)
 
 /* 急激な価格変動の検知時に、新規注文を入れない */
 #define DIFF_MINUTES_1				200		// 1分の所定(250USD/60000USD)の値幅
@@ -73,6 +72,7 @@
 #define BASE_LOT			(0.01)		// システム上の最小ロット数
 #define MAX_ORDER_NUM 		(10)		// 注文追加数制限
 #define MAX_EA_NUM			(16)		// EAで管理する片側注文（BUY/SELL）の最大注文数
+#define ORDER_LOT_GAIN		(1.278)		// 注文のロット増加比率
 
 //デフォルト注文時のBaseLotに対する倍率List
 double lot_list[]={

@@ -24,7 +24,7 @@
 // 新規
 input double AM_1stLot				= 0.01;				// <AM> 初期ロット [lot] : 0.01-
 input int AM_Averaging_1st_width	= 400;				// <AM> 1-2ピン目の幅 [USD] : 100-
-input int AM_MarginRateLimiter		= 5000;				// <AM> 証拠金維持率リミッタ [%] : 1000-
+input int AM_MarginRateLimiter		= 3000;				// <AM> 証拠金維持率リミッタ [%] : 1000-
 input int AM_OneSideMaxOrderNum		= MAX_ORDER_NUM;	// <AM> 片側のEA注文最大数 [注文] : 0-12
 input bool AM_FadeoutMode			= false;			// <AM> フェードアウト機能 : 0:OFF,1:ON
 
@@ -288,8 +288,6 @@ class CHandler
 			/* 注文数取得 */
 			TotalOrderNum = C_OrderManager.get_TotalOrderNum( en_pos );
 			
-			/* 証拠金維持率確認 */
-			// 維持率が低ければ、取引増やさない
 			
 			/* 急激な値動き確認 */
 			// 急騰急落の場合には注文を行わない
@@ -324,6 +322,15 @@ class CHandler
 			}
 			else{							// 2ピン目～注文
 				
+				/* 証拠金維持率確認 */
+				// 維持率が低ければ、取引増やさない
+				if( AccountInfoDouble( ACCOUNT_MARGIN_LEVEL ) != 0 ){			// ポジションが0の時は維持率0になる
+				
+					if( AccountInfoDouble( ACCOUNT_MARGIN_LEVEL ) < AM_MarginRateLimiter ){		// 所定より低ければ注文入れない
+						return;
+					}
+				}
+				
 				/* 差分確認 */
 				lastPrice = get_latestOrderOpenPrice(en_pos);				// 最終価格
 				diffNextPrice = diff_price_order[TotalOrderNum - 1];		// 次の価格との差
@@ -347,8 +354,8 @@ class CHandler
 				/* 所定のピン幅下がったら追加注文 */
 				if( diff > diffNextPrice ){
 					
-					lot = base_lot * MathPow( 1.278, TotalOrderNum );	// 注文量 
-					C_OrderManager.OrderTradeActionDeal( lot, en_order );	// 追加注文
+					lot = base_lot * MathPow( ORDER_LOT_GAIN, TotalOrderNum );	// 注文量 
+					C_OrderManager.OrderTradeActionDeal( lot, en_order );		// 追加注文
 					C_logger.output_log_to_file( StringFormat("注文実施 [売買]%d(0:buy 1:sell) [lot]%f", lot ) );
 				}
 			}

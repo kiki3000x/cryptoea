@@ -24,66 +24,79 @@ class CCheckerBars
 			}
 			return m_CheckerBars;
 		}
-
+		
+		
 		// *************************************************************************
-		//	機能		： 
+		//	機能		： 急激な価格変化の有無を確認
 		//	注意		： なし
 		//	メモ		： なし
 		//	引数		： なし
-		//	返り値		： 
+		//	返り値		： false: 急激な変化なし、ture: 急激な変化あり
 		//	参考URL		： なし
 		// **************************	履	歴	************************************
-		// 		v1.0		2021.04.14			Taji		新規
+		// 		v1.0		2021.08.06			Taka		新規
 		// *************************************************************************/
-		int Chk_preiod_m1_bars(void){
-			int shift=0;
-			double OpenArray[NUM_MINUTES_CUSTOM+1]={0};
-			double CloseArray[NUM_MINUTES_CUSTOM+1]={0};
-			//Barの取得
-			for( int i = 0; i < NUM_MINUTES_CUSTOM+1; i++){
-				OpenArray[i] = iOpen(Symbol(),PERIOD_M1,i);
-				CloseArray[i] = iClose(Symbol(),PERIOD_M1,i);
+		bool Is_warningPriceDiv(void){
+			
+			double OpenArray[MAX_CHK_MINUTES + 1]	={0};		// オープン価格
+			double CloseArray[MAX_CHK_MINUTES + 1]	={0};		// クローズ価格
+			double diff_latest;									// 最近の差分
+			double diff_pre1;									// 1つ前の差分
+			
+			/* 急激変化の機能 */
+			if( ES_BigDivMode == false ){
+				return false;
+			}	
+			
+			/* Barの取得 */
+			for( int i = 0; i < MAX_CHK_MINUTES + 1; i++ ){
+				OpenArray[i] = iOpen( Symbol(), PERIOD_M1, i );			// 1分足取得
+				CloseArray[i] = iClose( Symbol(), PERIOD_M1, i );		// 1分足取得
 			}
-
-			double diff_latest;
-			double diff_pre1;
-
-			//1分チェック
-			diff_latest = OpenArray[0] - CloseArray[0];//最新のBar
-			diff_pre1   = OpenArray[1] - CloseArray[1];//1つ前のBar
-			if( diff_latest > DIFF_MINUTES_1 ||  diff_pre1 > DIFF_MINUTES_1 ){
-				//下落局面なのでBUYは控える(過去‐現在が＋なので過去が高い、現在が低い→下落)
-				return RECOMMEND_STOP_BUY_DEAL;
+			
+			/* 1分チェック */
+			diff_latest = OpenArray[0] - CloseArray[0];			// 最新のBar
+			diff_pre1   = OpenArray[1] - CloseArray[1];			// 1つ前のBar
+			if( diff_latest > ES_PriceDiv1min ||  diff_pre1 > ES_PriceDiv1min ){
+				// 下落局面なので最低BUYは控える(過去‐現在が＋なので過去が高い、現在が低い→下落)
+//				return RECOMMEND_STOP_BUY_DEAL;
+				return true;		// 急激変化あり
 			}
-			if( -diff_latest > DIFF_MINUTES_1 ||  -diff_pre1 > DIFF_MINUTES_1 ){
-				return RECOMMEND_STOP_SELL_DEAL;
+			if( -diff_latest > ES_PriceDiv1min ||  -diff_pre1 > ES_PriceDiv1min ){
+//				return RECOMMEND_STOP_SELL_DEAL;
+				return true;		// 急激変化あり
 			}
-
-			//3分チェック
-			diff_latest = OpenArray[3] - CloseArray[1];//3つ前の1分足のオープン価格から1つ前のクローズ価格の差分
-			diff_pre1   = OpenArray[2] - CloseArray[0];//1つ前のBar
-			if( diff_latest > DIFF_MINUTES_3 ||  diff_pre1 > DIFF_MINUTES_3 ){
-				//下落局面なのでBUYは控える(過去‐現在が＋なので過去が高い、現在が低い→下落)
-				return RECOMMEND_STOP_BUY_DEAL;
+			
+			/* 5分チェック */
+			diff_latest = OpenArray[5] - CloseArray[1];		// 5つ前の1分足のオープン価格から1つ前のクローズ価格の差分
+			diff_pre1   = OpenArray[4] - CloseArray[0];		// 1つ前のBar
+			if( diff_latest > ES_PriceDiv5min ||  diff_pre1 > ES_PriceDiv5min ){
+				// 下落局面なので最低BUYは控える(過去‐現在が＋なので過去が高い、現在が低い→下落)
+//				return RECOMMEND_STOP_BUY_DEAL;
+				return true;		// 急激変化あり
 			}
-			if( -diff_latest > DIFF_MINUTES_3 || -diff_pre1 > DIFF_MINUTES_3 ){
-				return RECOMMEND_STOP_SELL_DEAL;
+			if( -diff_latest > ES_PriceDiv5min || -diff_pre1 > ES_PriceDiv5min ){
+//				return RECOMMEND_STOP_SELL_DEAL;
+				return true;		// 急激変化あり
 			}
-
-			//カスタムチェック(デフォルト10分)
-			diff_latest = OpenArray[NUM_MINUTES_CUSTOM] - CloseArray[1];  //3つ前の1分足のオープン価格から1つ前のクローズ価格の差分
-			diff_pre1   = OpenArray[NUM_MINUTES_CUSTOM-1] - CloseArray[0];//1つ前のBar
-			if( diff_latest > DIFF_MINUTES_CUSTOM || diff_pre1 > DIFF_MINUTES_CUSTOM ){
-				//下落局面なのでBUYは控える(過去‐現在が＋なので過去が高い、現在が低い→下落)
-				return RECOMMEND_STOP_BUY_DEAL;
+			
+			/* カスタムチェック */
+			diff_latest = OpenArray[ES_PriceDivnmin_num] - CloseArray[1];  //3つ前の1分足のオープン価格から1つ前のクローズ価格の差分
+			diff_pre1   = OpenArray[ES_PriceDivnmin_num-1] - CloseArray[0];//1つ前のBar
+			if( diff_latest > ES_PriceDivnmin || diff_pre1 > ES_PriceDivnmin ){
+				// 下落局面なのでBUYは控える(過去‐現在が＋なので過去が高い、現在が低い→下落)
+//				return RECOMMEND_STOP_BUY_DEAL;
+				return true;		// 急激変化あり
 			}
-			if( -diff_latest > DIFF_MINUTES_CUSTOM || -diff_pre1 > DIFF_MINUTES_CUSTOM ){
-				return RECOMMEND_STOP_SELL_DEAL;
+			if( -diff_latest > ES_PriceDivnmin || -diff_pre1 > ES_PriceDivnmin ){
+//				return RECOMMEND_STOP_SELL_DEAL;
+				return true;		// 急激変化あり
 			}
-
-			return RECOMMEND_NO_PROBREM;
+			
+			return false;
 		}
-
+		
+		
 		// *************************************************************************
 		//	機能		： スーパー下落局面は突然戻る可能性があるのでSELLは控える、スーパー高騰局面は突然戻る可能性があるのでBUYは控える
 		//	注意		： なし

@@ -27,6 +27,11 @@ input int AM_Averaging_1st_width	= 400;				// <AM> 1-2ピン目の幅 [USD] : 10
 input int AM_MarginRateLimiter		= 3000;				// <AM> 証拠金維持率リミッタ [%] : 1000-
 input int AM_OneSideMaxOrderNum		= MAX_ORDER_NUM;	// <AM> 片側のEA注文最大数 [注文] : 0-12
 input bool AM_FadeoutMode			= false;			// <AM> フェードアウト機能 : 0:OFF,1:ON
+input bool ES_BigDivMode			= true;				// <ES> 急騰急落注文抑止機能 : 0:OFF,1:ON
+input int ES_PriceDiv1min			= 200;				// <ES> 1分足の急激変化価格 [USD] : 50-
+input int ES_PriceDiv5min			= 250;				// <ES> 5分足の急激変化価格 [USD] : 50-
+input int ES_PriceDivnmin_num		= 20;				// <ES> n分足の急激変化 [分] : 6-60
+input int ES_PriceDivnmin			= 350;				// <ES> n分足の急激変化価格 [USD] : 50-
 
 // 既存
 int trailingStop_mode = 100;
@@ -273,6 +278,7 @@ class CHandler
 		//	参考URL		： なし
 		// **************************	履	歴	************************************
 		// 		v1.0		2021.08.04			Taka		新規
+		// 		v1.1		2021.08.06			Taka		急騰急落注文抑止 機能 追加
 		// *************************************************************************/
 		void OnTickPosition( ENUM_POSITION_TYPE en_pos ){
 			
@@ -288,9 +294,10 @@ class CHandler
 			/* 注文数取得 */
 			TotalOrderNum = C_OrderManager.get_TotalOrderNum( en_pos );
 			
-			
 			/* 急激な値動き確認 */
-			// 急騰急落の場合には注文を行わない
+			if( true == C_CheckerBars.Is_warningPriceDiv() ){		// 急激な価格変化を検知したため、注文を入れない
+				return;
+			}
 			
 			/* 片側の注文数が最大値に到達していたら何もしない */
 			if( TotalOrderNum >= AM_OneSideMaxOrderNum ){

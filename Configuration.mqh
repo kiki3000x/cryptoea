@@ -36,17 +36,13 @@
 #define debug_Handler					// 動作管理
 #define debug_OrderManager				// 取引管理
 
-/* 一般 */
-#define MAGICNUM						345675	// デフォルト
+/* 全般 */
+#define MAGICNUM					345675	// デフォルト
 
 /* 急激な価格変動の検知時に、新規注文を入れない */
-#define DIFF_MINUTES_1				200		// 1分の所定(250USD/60000USD)の値幅
-#define DIFF_MINUTES_3				250		// 3分の所定(350USD/60000USD)の値幅
-#define DIFF_MINUTES_CUSTOM			350		// 10分の所定(500USD/60000USD)の値幅
-#define NUM_MINUTES_CUSTOM			25		// カスタムチェックの期間(この値はチェックする最大の値にすること ※ 最大配列Noに使っているためOutOfRangeErrorの原因になります）
-#define RECOMMEND_NO_PROBREM		0		// 問題なし
-#define RECOMMEND_STOP_BUY_DEAL		1		// BUYの取引一時停止
-#define RECOMMEND_STOP_SELL_DEAL	2 		// SELLの取引一時停止
+#define MAX_CHK_MINUTES				90		// カスタムチェックの期間
+											//(この値はチェックする最大の値にすること ）
+											// ※ 最大配列Noに使っているためOutOfRangeErrorの原因になるため
 
 
 //**************************************************

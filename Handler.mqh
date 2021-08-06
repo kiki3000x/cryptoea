@@ -21,17 +21,23 @@
 //**************************************************
 // UIインプット
 //**************************************************
-// 既存
-input int trailingStop_mode = 100;
-input double input_SetSLFromTP_range = -1;
-input double input_trailingStop_range = -1;
-input double input_terminalg_lot = -1;
 // 新規
-input double AM_1stLot				= 0.01;		// 初期ロット [lot]
-input int AM_Averaging_1st_width	= 400;		// 1-2ピン目の幅 [USD]
-input int AM_MarginRateLimiter		= 5000;		// 証拠金維持率リミッター [%]
+input double AM_1stLot				= 0.01;				// <AM> 初期ロット [lot] : 0.01-
+input int AM_Averaging_1st_width	= 400;				// <AM> 1-2ピン目の幅 [USD] : 100-
+input int AM_MarginRateLimiter		= 5000;				// <AM> 証拠金維持率リミッタ [%] : 1000-
+input int AM_OneSideMaxOrderNum		= MAX_ORDER_NUM;	// <AM> 片側のEA注文最大数 [注文] : 0-12
+input bool AM_FadeoutMode			= false;			// <AM> フェードアウト機能 : 0:OFF,1:ON
+
+// 既存
+int trailingStop_mode = 100;
+double input_SetSLFromTP_range = -1;
+double input_trailingStop_range = -1;
+double input_terminalg_lot = -1;
 
 
+//**************************************************
+// CHandlerクラス
+//**************************************************
 class CHandler
 {
 	private:
@@ -270,7 +276,6 @@ class CHandler
 		// *************************************************************************/
 		void OnTickPosition( ENUM_POSITION_TYPE en_pos ){
 			
-//			double	base_lot = GlobalVariableGet("terminalg_lot");		// 初期ロット取得
 			double	base_lot = AM_1stLot;								// 初期ロット取得
 			double	nowPrice;											// 現在価格
 			double	lastPrice;											// 最終価格
@@ -282,9 +287,25 @@ class CHandler
 			
 			/* 注文数取得 */
 			TotalOrderNum = C_OrderManager.get_TotalOrderNum( en_pos );
-
+			
+			/* 証拠金維持率確認 */
+			// 維持率が低ければ、取引増やさない
+			
+			/* 急激な値動き確認 */
+			// 急騰急落の場合には注文を行わない
+			
+			/* 片側の注文数が最大値に到達していたら何もしない */
+			if( TotalOrderNum >= AM_OneSideMaxOrderNum ){
+				return;
+			}
+			
 			/* 注文処理 */
 			if( TotalOrderNum == 0 ){		// 新規注文
+				
+				/* フェードアウト機能が有効なら新規注文は入れない（新規注文だけチェックすればOK） */
+				if( AM_FadeoutMode == true ){
+					return;
+				}
 				
 				/* 取引に応じた注文（BUY or SELL） */
 				if( en_pos == POSITION_TYPE_BUY ){
@@ -353,8 +374,8 @@ class CHandler
 			newTP = C_OrderManager.GetNewTP( en_pos );		// TP取得
 			C_OrderManager.SetTP( en_pos, newTP );			// TP設定
 		}
-			
-			
+		
+		
 		// *************************************************************************
 		//	機能		： 価格更新ごとに実行される関数
 		//	注意		： なし
@@ -391,12 +412,7 @@ class CHandler
 				return;
 			}
 //#endif
-			/* 証拠金維持率確認 */
-			// 維持率が低ければ、取引増やさない
 			
-			/* 急激な値動き確認 */
-			// 急騰急落の場合には注文を行わない
-
 			/* 取引処理（注文関連） */
 			OnTickPosition( POSITION_TYPE_BUY );		// Buyの取引
 			OnTickPosition( POSITION_TYPE_SELL );		// Sellの取引

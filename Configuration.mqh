@@ -70,10 +70,9 @@
 //**************************************************
 // ロット数に関する定義、リスト、カスタム関数
 //**************************************************
-#define BASE_LOT (0.01)			// システム上の最小ロット数
-#define MAX_ORDER_NUM 7			// 注文追加数制限 //★デフォルト
-#define MAX_LOT_LIST_NUM 16		// EAで管理する片側注文（BUY/SELL）の最大注文数
-#define MAX_EA_NUM	(16)		// EAで管理する片側注文（BUY/SELL）の最大注文数
+#define BASE_LOT			(0.01)		// システム上の最小ロット数
+#define MAX_ORDER_NUM 		(10)		// 注文追加数制限
+#define MAX_EA_NUM			(16)		// EAで管理する片側注文（BUY/SELL）の最大注文数
 
 //デフォルト注文時のBaseLotに対する倍率List
 double lot_list[]={

@@ -140,6 +140,7 @@ class COrderManager
 					st_BuyEA.d_volume[index_buy] 		= PositionGetDouble( POSITION_VOLUME );				// ロット
 					st_BuyEA.i_digits[index_buy] 		= (int)SymbolInfoInteger( symbol,SYMBOL_DIGITS );	// 小数点以下の桁数
 					st_BuyEA.l_createTime[index_buy]	= (long)PositionGetInteger(POSITION_TIME);			// 注文が出された時刻
+					st_BuyEA.d_tp[index_buy]			= PositionGetDouble( POSITION_TP );					// TP
 					index_buy++;		// 次のデータを格納
 				} 
 				else{		// 売り（POSITION_TYPE_SELL）
@@ -148,6 +149,7 @@ class COrderManager
 					st_SellEA.d_volume[index_sell] 		= PositionGetDouble( POSITION_VOLUME );				// ロット
 					st_SellEA.i_digits[index_sell] 		= (int)SymbolInfoInteger( symbol,SYMBOL_DIGITS );	// 小数点以下の桁数
 					st_SellEA.l_createTime[index_sell]	= (long)PositionGetInteger(POSITION_TIME);			// 注文が出された時刻
+					st_SellEA.d_tp[index_buy]			= PositionGetDouble( POSITION_TP );					// TP
 					index_sell++;		// 次のデータを格納
 				}
 			}
@@ -343,6 +345,18 @@ class COrderManager
 			if( d_tp == 0 ){
 				return;
 			}
+			
+			/* TPが同一の場合設定しない */
+			if( en_type == POSITION_TYPE_BUY ){		// 買い（POSITION_TYPE_BUY）
+				if( st_BuyEA.d_tp[0] == NormalizeDouble( d_tp, st_BuyEA.i_digits[0] ) ){
+					return;
+				}
+			}
+			else{									// 売り（POSITION_TYPE_SELL）
+				if( st_SellEA.d_tp[0] == NormalizeDouble( d_tp, st_SellEA.i_digits[0] ) ){
+					return;
+				}
+			}			
 			
 			/* TPを設定 */
 			for( i = total - 1; i >= 0; i-- )

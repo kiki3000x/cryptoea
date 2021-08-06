@@ -23,6 +23,7 @@
 //**************************************************
 // 新規
 input double AM_1stLot				= 0.01;				// <AM> 初期ロット [lot] : 0.01-
+input double AM_orderLotGain		= ORDER_LOT_GAIN;	// <AM> ロット増加比率 [倍] : 1.2-1.3
 input int AM_Averaging_1st_width	= 400;				// <AM> 1-2ピン目の幅 [USD] : 100-
 input int AM_MarginRateLimiter		= 3000;				// <AM> 証拠金維持率リミッタ [%] : 1000-
 input int AM_OneSideMaxOrderNum		= MAX_ORDER_NUM;	// <AM> 片側のEA注文最大数 [注文] : 0-12
@@ -369,7 +370,7 @@ class CHandler
 				/* 所定のピン幅下がったら追加注文 */
 				if( diff > diffNextPrice ){
 					
-					lot = base_lot * MathPow( ORDER_LOT_GAIN, TotalOrderNum );	// 注文量 
+					lot = base_lot * MathPow( AM_orderLotGain, TotalOrderNum );	// 注文量 
 					C_OrderManager.OrderTradeActionDeal( lot, en_order );		// 追加注文
 					C_logger.output_log_to_file( StringFormat("注文実施 [売買]%d(0:buy 1:sell) [lot]%f", lot ) );
 				}

@@ -32,6 +32,8 @@ input int ES_PriceDiv1min			= 200;				// <ES> 1分足の急激変化価格 [USD]
 input int ES_PriceDiv5min			= 250;				// <ES> 5分足の急激変化価格 [USD] : 50-
 input int ES_PriceDivnmin_num		= 20;				// <ES> n分足の急激変化 [分] : 6-60
 input int ES_PriceDivnmin			= 350;				// <ES> n分足の急激変化価格 [USD] : 50-
+input int EL_MaxEntryPrice			= 80000;			// <EL> 最大新規注文価格 [USD] : 25000-
+input int EL_MinEntryPrice			= 25000;			// <EL> 最低新規注文価格 [USD] : 25000-
 
 // 既存
 int trailingStop_mode = 100;
@@ -102,7 +104,6 @@ class CHandler
 			// 有効期限切れ
 			if( C_CheckerException.Chk_Expired() == false ){
 				//C_logger.output_log_to_file("フェードアウトモード移行");
-				GlobalVariableSet("terminalg_fadeout_mode",true);
 			}	
 		}
 		
@@ -151,10 +152,10 @@ class CHandler
 				GlobalVariableSet("terminalg_lot",input_terminalg_lot);
 			}
 
-			//フェードアウトモードのターミナルグローバル変数がない場合は初期化
-			if( false == GlobalVariableCheck("terminalg_fadeout_mode")){
-				GlobalVariableSet("terminalg_fadeout_mode",false);
-			}
+//			//フェードアウトモードのターミナルグローバル変数がない場合は初期化
+//			if( false == GlobalVariableCheck("terminalg_fadeout_mode")){
+//				GlobalVariableSet("terminalg_fadeout_mode",false);
+//			}
 
 			//トレーリングストップモードのターミナルグローバル変数がなければ初期化
 			if( false == GlobalVariableCheck("tg_trailingStop_mode")){
@@ -287,6 +288,7 @@ class CHandler
 			double	lastPrice;											// 最終価格
 			double	diff;												// 現在価格と最後の注文との差額を計算
 			double	diffNextPrice;										// 次の値段までの差分
+			double	avePrice;											// 平均価格
 			int 	TotalOrderNum;										// 全注文数
 			ENUM_ORDER_TYPE	en_order;									// 注文方法
 			double	lot = 0.0;											// 注文量
@@ -309,6 +311,12 @@ class CHandler
 				
 				/* フェードアウト機能が有効なら新規注文は入れない（新規注文だけチェックすればOK） */
 				if( AM_FadeoutMode == true ){
+					return;
+				}
+				
+				/* 価格の最大値、最小限を超えていない範囲で注文を実施 */
+				avePrice = ( SymbolInfoDouble(Symbol(), SYMBOL_ASK ) + SymbolInfoDouble(Symbol(), SYMBOL_ASK ) ) * 0.5;
+				if( ( avePrice < EL_MinEntryPrice ) || ( EL_MaxEntryPrice < avePrice ) ){
 					return;
 				}
 				

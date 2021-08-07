@@ -8,7 +8,7 @@
 #property copyright 	"Copyright 2021, Team T&T."
 #property link			"https://www.mql5.com"
 #property version		EA_VERSION
-#property description	"◆◆◆注意◆◆◆\n本EAは、価格幅20000USD～80000USDのBTC-USDトレード相場に適用させたナンピンマーチンを基本とし、さらにオリジナルな攻めと守りの機能を追加したクリプト専用のオリジナルEAです。\nあくまでも趣味の範囲のものであるため、使用に関する一切の保証などはありません。\nその旨ご承知おきください。"
+#property description	"本EAは、価格幅20000USD～80000USDのBTC-USDトレード相場に適用させたナンピンマーチンを基本とし、さらにオリジナルな攻めと守りの機能を追加したクリプト専用のオリジナルEAです。\n◆◆◆注意◆◆◆\n(1) あくまでも趣味の範囲のものであるため、使用に関する一切の保証などはありませんので、ご承知おきください。\n(2) インプット項目の変更は、注文がない状態で実施し、EA再起動ください。\n(3) インプット項目の先頭に '*' のある項目は、動作中に変更可能です。"
 #property icon			"logo.ico"
 
 CHandler* C_Handler = CHandler::GetHandler();

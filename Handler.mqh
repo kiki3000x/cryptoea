@@ -27,14 +27,14 @@ input double AM_orderLotGain		= ORDER_LOT_GAIN;	// <AM> ロット増加比率 [�
 input int AM_Averaging_1st_width	= 400;				// <AM> 1-2ピン目の幅 [USD] : 100-
 input int AM_MarginRateLimiter		= 3000;				// <AM> 証拠金維持率リミッタ [%] : 1000-
 input int AM_OneSideMaxOrderNum		= MAX_ORDER_NUM;	// <AM> 片側のEA注文最大数 [注文] : 0-12
-input bool AM_FadeoutMode			= false;			// <AM> フェードアウト機能 : 0:OFF,1:ON
+input bool AM_FadeoutMode			= false;			// <AM> *フェードアウト機能 : 0:OFF,1:ON
 input bool ES_BigDivMode			= true;				// <ES> 急騰急落注文抑止機能 : 0:OFF,1:ON
 input int ES_PriceDiv1min			= 200;				// <ES> 1分足の急激変化価格 [USD] : 50-
 input int ES_PriceDiv5min			= 250;				// <ES> 5分足の急激変化価格 [USD] : 50-
 input int ES_PriceDivnmin_num		= 20;				// <ES> n分足の急激変化 [分] : 6-60
 input int ES_PriceDivnmin			= 350;				// <ES> n分足の急激変化価格 [USD] : 50-
-input int EL_MaxEntryPrice			= 80000;			// <EL> 最大新規注文価格 [USD] : 25000-
-input int EL_MinEntryPrice			= 25000;			// <EL> 最低新規注文価格 [USD] : 25000-
+input int EL_MaxEntryPrice			= 80000;			// <EL> *最大新規注文価格 [USD] : 20000-
+input int EL_MinEntryPrice			= 20000;			// <EL> *最低新規注文価格 [USD] : 20000-
 
 // 既存
 int trailingStop_mode = 100;

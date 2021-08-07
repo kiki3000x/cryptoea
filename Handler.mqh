@@ -22,12 +22,14 @@
 // UIインプット
 //**************************************************
 // 新規
-input double AM_1stLot				= 0.01;				// <AM> 初期ロット [lot] : 0.01-
+input bool AM_FadeoutModeBuy		= false;			// <AM> *Buyフェードアウト機能 : 0:OFF,1:ON
+input bool AM_FadeoutModeSell		= false;			// <AM> *Sellフェードアウト機能 : 0:OFF,1:ON
+input double AM_1stLotBuy			= 0.01;				// <AM> Buy初期ロット [lot] : 0.01-
+input double AM_1stLotSell			= 0.01;				// <AM> Sell初期ロット [lot] : 0.01-
 input double AM_orderLotGain		= ORDER_LOT_GAIN;	// <AM> ロット増加比率 [倍] : 1.2-1.3
 input int AM_Averaging_1st_width	= 400;				// <AM> 1-2ピン目の幅 [USD] : 100-
 input int AM_MarginRateLimiter		= 3000;				// <AM> 証拠金維持率リミッタ [%] : 1000-
 input int AM_OneSideMaxOrderNum		= MAX_ORDER_NUM;	// <AM> 片側のEA注文最大数 [注文] : 0-12
-input bool AM_FadeoutMode			= false;			// <AM> *フェードアウト機能 : 0:OFF,1:ON
 input bool ES_BigDivMode			= true;				// <ES> 急騰急落注文抑止機能 : 0:OFF,1:ON
 input int ES_PriceDiv1min			= 200;				// <ES> 1分足の急激変化価格 [USD] : 50-
 input int ES_PriceDiv5min			= 250;				// <ES> 5分足の急激変化価格 [USD] : 50-
@@ -284,15 +286,15 @@ class CHandler
 		// *************************************************************************/
 		void OnTickPosition( ENUM_POSITION_TYPE en_pos ){
 			
-			double	base_lot = AM_1stLot;								// 初期ロット取得
-			double	nowPrice;											// 現在価格
-			double	lastPrice;											// 最終価格
-			double	diff;												// 現在価格と最後の注文との差額を計算
-			double	diffNextPrice;										// 次の値段までの差分
-			double	avePrice;											// 平均価格
-			int 	TotalOrderNum;										// 全注文数
-			ENUM_ORDER_TYPE	en_order;									// 注文方法
-			double	lot = 0.0;											// 注文量
+			double	base_lot;					// 初期ロット取得
+			double	nowPrice;					// 現在価格
+			double	lastPrice;					// 最終価格
+			double	diff;						// 現在価格と最後の注文との差額を計算
+			double	diffNextPrice;				// 次の値段までの差分
+			double	avePrice;					// 平均価格
+			int 	TotalOrderNum;				// 全注文数
+			ENUM_ORDER_TYPE	en_order;			// 注文方法
+			double	lot = 0.0;					// 注文量
 			
 			/* 注文数取得 */
 			TotalOrderNum = C_OrderManager.get_TotalOrderNum( en_pos );
@@ -310,11 +312,6 @@ class CHandler
 			/* 注文処理 */
 			if( TotalOrderNum == 0 ){		// 新規注文
 				
-				/* フェードアウト機能が有効なら新規注文は入れない（新規注文だけチェックすればOK） */
-				if( AM_FadeoutMode == true ){
-					return;
-				}
-				
 				/* 価格の最大値、最小限を超えていない範囲で注文を実施 */
 				avePrice = ( SymbolInfoDouble(Symbol(), SYMBOL_ASK ) + SymbolInfoDouble(Symbol(), SYMBOL_ASK ) ) * 0.5;
 				if( ( avePrice < EL_MinEntryPrice ) || ( EL_MaxEntryPrice < avePrice ) ){
@@ -323,14 +320,24 @@ class CHandler
 				
 				/* 取引に応じた注文（BUY or SELL） */
 				if( en_pos == POSITION_TYPE_BUY ){
+				
+					/* フェードアウト機能が有効なら新規注文は入れない（新規注文だけチェックすればOK） */
+					if( AM_FadeoutModeBuy == true ){
+						return;
+					}
 					
 					C_logger.output_log_to_file("Handler::OrderNoPosition  Buyの1ピン目");
-					C_OrderManager.OrderTradeActionDeal( base_lot, ORDER_TYPE_BUY);		// 新規注文
+					C_OrderManager.OrderTradeActionDeal( AM_1stLotBuy, ORDER_TYPE_BUY);		// 新規注文
 				}
 				else if( en_pos == POSITION_TYPE_SELL ){
 					
+					/* フェードアウト機能が有効なら新規注文は入れない（新規注文だけチェックすればOK） */
+					if( AM_FadeoutModeSell == true ){
+						return;
+					}
+					
 					C_logger.output_log_to_file("Handler::OrderNoPosition  Sellの1ピン目");
-					C_OrderManager.OrderTradeActionDeal( base_lot, ORDER_TYPE_SELL);	// 新規注文
+					C_OrderManager.OrderTradeActionDeal( AM_1stLotSell, ORDER_TYPE_SELL);	// 新規注文
 				}
 				C_logger.output_log_to_file( 
 					StringFormat("[差分1]%d, [type]%d (0:buy 1:sell)", diff_price_order[0], (int)en_pos ) 
@@ -356,11 +363,13 @@ class CHandler
 					nowPrice	= SymbolInfoDouble( Symbol(), SYMBOL_ASK );	// BUYの現在価格
 					diff 		= lastPrice - nowPrice;						// 現在価格との差
 					en_order	= ORDER_TYPE_BUY;							// BUYの注文
+					base_lot	= AM_1stLotBuy;								// Buyの注文量
 				}
 				else{									// 売り取引
 					nowPrice	= SymbolInfoDouble( Symbol(), SYMBOL_BID );	// SELLの現在価格
 					diff 		= nowPrice - lastPrice;						// 現在価格との差
 					en_order	= ORDER_TYPE_SELL;							// SELLの注文
+					base_lot	= AM_1stLotSell;							// SELLの注文量
 				}
 				
 #ifdef debug_Handler

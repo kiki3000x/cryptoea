@@ -38,6 +38,7 @@ input int ES_PriceDivnmin			= 350;				// <ES> n分足の急激変化価格 [USD]
 input int EL_MaxEntryPrice			= 80000;			// <EL> *最大新規注文価格 [USD] : 20000-
 input int EL_MinEntryPrice			= 20000;			// <EL> *最低新規注文価格 [USD] : 20000-
 
+
 // 既存
 int trailingStop_mode = 100;
 double input_SetSLFromTP_range = -1;
@@ -146,20 +147,7 @@ class CHandler
 			if( true == GlobalVariableCheck("tg_StopOrderJudge_minutes") ){
 				GlobalVariableDel("tg_StopOrderJudge_minutes");
 			}
-
-			//ロット最小値のターミナルグローバル変数がなければ初期化
-			if( false == GlobalVariableCheck("terminalg_lot")){
-				GlobalVariableSet("terminalg_lot",BASE_LOT);
-			}
-			if( input_terminalg_lot >= 0 ){
-				GlobalVariableSet("terminalg_lot",input_terminalg_lot);
-			}
-
-//			//フェードアウトモードのターミナルグローバル変数がない場合は初期化
-//			if( false == GlobalVariableCheck("terminalg_fadeout_mode")){
-//				GlobalVariableSet("terminalg_fadeout_mode",false);
-//			}
-
+			
 			//トレーリングストップモードのターミナルグローバル変数がなければ初期化
 			if( false == GlobalVariableCheck("tg_trailingStop_mode")){
 				GlobalVariableSet("tg_trailingStop_mode",false);
@@ -186,16 +174,6 @@ class CHandler
 			if( input_SetSLFromTP_range >= 0 ){
 				GlobalVariableSet("tg_SetSLFromTP_range",input_SetSLFromTP_range);
 			}
-
-			//BUY注文停止上限値のターミナルグローバル変数がなければ初期化
-			if( false == GlobalVariableCheck("tg_BuyOrderStopLimitMaxPrice")){
-				GlobalVariableSet("tg_BuyOrderStopLimitMaxPrice",1000000);
-			}
-
-			//SELL注文停止下限値のターミナルグローバル変数がなければ初期化
-			if( false == GlobalVariableCheck("tg_SellOrderStopLimitMinPrice")){
-				GlobalVariableSet("tg_SellOrderStopLimitMinPrice",0);
-			}
 		}
 		
 		
@@ -214,7 +192,7 @@ class CHandler
 			
 			static bool b_first = false;		// 初回判定フラグ(false:初回、true:2回目～)
 			
-			// 起動ログ
+			/* 起動ログ */
 			C_logger.output_log_to_file( 
 				StringFormat("Handler::OnInit 初期化の処理開始 [初回]%d (0:初回、1:2回目～)", (int)b_first ) 
 			);
@@ -225,10 +203,10 @@ class CHandler
 				return;		// 2回目以降は何もしない
 			} 
 			
-			// グローバル変数の初期化
+			/* グローバル変数の初期化 */
 			initGlobalVal();
 			
-			// 口座番号確認
+			/* 口座番号確認 */
 			if( C_CheckerException.Chk_Account() == false ){
 				C_logger.output_log_to_file("Handler::OnInit 起動対象ではない -> EA終了");
 				if( SPECIFIED_ACCOUNT_CHECK == true ){
@@ -236,21 +214,15 @@ class CHandler
 				}
 			}
 			
-			// カスタムテーブル処理(Configuration.mqh)
-			ConfigCustomizeLotList();
+			/* 設定値の変更処理(Configuration.mqh) */
 			ConfigCustomizeDiffPriceOrderList();
-			ConfigCustomizeTPTable();
 			
 			// 単体テスト（各test項目をif(0)で制御）
 			if(0){
 				C_OrderManager.unit_test();
 			}
 			
-			// TPスキャン
-//			C_OrderManager.UpdateSLTP( POSITION_TYPE_BUY );
-//			C_OrderManager.UpdateSLTP( POSITION_TYPE_SELL );
-			
-			// 1回しか実行させないようにする
+			/* 1回しか実行させないようにする */
 			b_first = true;
 			b_fin1stOninit = true;		// Oninit関数が初回実行の完了(false:未実行、true:実行)
 			
@@ -299,13 +271,13 @@ class CHandler
 			/* 注文数取得 */
 			TotalOrderNum = C_OrderManager.get_TotalOrderNum( en_pos );
 			
-			/* 急激な値動き確認 */
-			if( true == C_CheckerBars.Is_warningPriceDiv() ){		// 急激な価格変化を検知したため、注文を入れない
+			/* 片側の注文数が最大値に到達していたら何もしない */
+			if( TotalOrderNum >= AM_OneSideMaxOrderNum ){
 				return;
 			}
 			
-			/* 片側の注文数が最大値に到達していたら何もしない */
-			if( TotalOrderNum >= AM_OneSideMaxOrderNum ){
+			/* 急激な値動き確認 */
+			if( true == C_CheckerBars.Is_warningPriceDiv() ){		// 急激な価格変化を検知したため、注文を入れない
 				return;
 			}
 			

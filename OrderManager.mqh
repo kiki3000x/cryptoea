@@ -184,6 +184,7 @@ class COrderManager
 		//	参考URL		： なし
 		// **************************	履	歴	************************************
 		// 		v1.0		2021.08.05			Taka		新規
+		// 		v1.1		2021.08.08			Taka		UIの設定値に基づいて利益量を最適化
 		// *************************************************************************/
 		double get_profitAdd( int orderNum ){
 			
@@ -210,6 +211,10 @@ class COrderManager
 				case 16:	ans = 450;		break;
 				default:	ans = 500;		break;
 			}
+			
+			ans = ans * AM_Averaging_1st_width / 400.0;			// 400USDに基づく利益量のため
+			
+			if( ans < 50.0 ) ans = 50.0;
 			
 			return ans;
 		}

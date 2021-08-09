@@ -41,8 +41,18 @@
 /* 口座番号のチェック */
 #define SPECIFIED_ACCOUNT_CHECK		true		// 指定口座でのみ動作: true：有効(default)、false：無効
 
-/* 全般 */
-#define MAGICNUM					345675		// デフォルト
+/* マジックナンバー */
+#define MAGIC_EA			( 0x0001 )				// EA用の注文指定
+#define MAGIC_NM			( 0x0002 )				// 通常用のナンピン指定
+#define MAGIC_AT			( 0x0004 )				// アタッカー用のナンピン指定
+#define MAGIC_BL			( 0x0008 )				// バランサー用のナンピン指定
+#define SET_MAGIC_NM(a)		( ( a ) | MAGIC_NM )	// 通常用のナンピン設定
+#define SET_MAGIC_AT(a)		( ( a ) | MAGIC_AT )	// アタッカー用のナンピン設定
+#define SET_MAGIC_BL(a)		( ( a ) | MAGIC_BL )	// バランサー用のナンピン設定
+#define IS_MAGIC_EA(a)		( ( ( a ) & MAGIC_EA ) == 0 ? false : true )	// EA用の注文判定
+#define IS_MAGIC_NM(a)		( ( ( a ) & MAGIC_NM ) == 0 ? false : true )	// 通常用のナンピン判定
+#define IS_MAGIC_AT(a)		( ( ( a ) & MAGIC_AT ) == 0 ? false : true )	// アタッカー用のナンピン判定
+#define IS_MAGIC_BL(a)		( ( ( a ) & MAGIC_BL ) == 0 ? false : true )	// バランサー用のナンピン判定
 
 /* ロット設定 */
 #define BASE_LOT					(0.01)		// システム上の最小ロット数

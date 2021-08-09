@@ -37,7 +37,9 @@ input int ES_PriceDivnmin_num		= 20;				// <ES> n分足の急激変化 [分] : 6
 input int ES_PriceDivnmin			= 350;				// <ES> n分足の急激変化価格 [USD] : 50-
 input int EL_MaxEntryPrice			= 80000;			// <EL> *最大新規注文価格 [USD] : 20000-
 input int EL_MinEntryPrice			= 20000;			// <EL> *最低新規注文価格 [USD] : 20000-
-
+input bool AB_BothEntry				= true;				// <AB> アタッカ&バランサ機能 : 0:OFF,1:ON
+input double AB_MaxBackRatio		= 30.0;				// <AB> 最大利益の折返し比率 [USD] : 10-50
+input int AB_StaBlncrNum			= 4;				// <AB> バランサ開始の注文数 [注文目] : 2-7
 
 // 既存
 int trailingStop_mode = 100;

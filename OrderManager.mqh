@@ -131,7 +131,7 @@ class COrderManager
 				type	= (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);	// 売買タイプ
 				
 				// EA以外はデータを格納しない
-				if( magic != MAGICNUM ) continue;
+				if( magic != MAGIC_EA ) continue;
 				
 				// 注文方法に応じてデータ格納
 				if( type == POSITION_TYPE_BUY ){		// 買い（POSITION_TYPE_BUY）
@@ -374,7 +374,7 @@ class COrderManager
 				digits			= (int)SymbolInfoInteger( position_symbol,SYMBOL_DIGITS );
 				
 				// EAの注文でない場合はスキップ
-				if( magic != MAGICNUM ) continue;
+				if( magic != MAGIC_EA ) continue;
 				
 				// 指定されたポジションタイプでない場合はスキップ
 				if( en_type != type ) continue;
@@ -389,7 +389,7 @@ class COrderManager
 				request.symbol    = position_symbol;
 				request.sl        = 0;
 				request.tp        = NormalizeDouble( d_tp, digits );		// ポジションのTake Profit
-				request.magic     = MAGICNUM;
+				request.magic     = MAGIC_EA;
 					
 				// リクエストの送信
 				bool ans = OrderSend(request,result);
@@ -435,7 +435,7 @@ class COrderManager
 				magic			= PositionGetInteger( POSITION_MAGIC );
 				type			=(ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
 			
-				if( magic == MAGICNUM ){
+				if( magic == MAGIC_EA ){
 					if( req_type == type ){
 						
 						latest_position_price = PositionGetDouble( POSITION_PRICE_OPEN );
@@ -467,7 +467,7 @@ class COrderManager
 				ulong magic			= PositionGetInteger( POSITION_MAGIC );
 				ENUM_POSITION_TYPE type=(ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
 			
-				if(magic == MAGICNUM){
+				if(magic == MAGIC_EA){
 					if( req_type == type ){
 						order_num++;
 					}
@@ -500,7 +500,7 @@ class COrderManager
 			request.volume	= volume;					// ロット数
 			request.type	= type;						// 売り or 買い
 			request.deviation	= 5;					// 価格からの許容偏差
-			request.magic		= MAGICNUM;				// マジックナンバー指定
+			request.magic		= MAGIC_EA;				// マジックナンバー指定
 			// 注文価格
 			if ( type == ORDER_TYPE_BUY ){			// 成行買い注文
 				
@@ -579,7 +579,7 @@ class COrderManager
 								magic,
 								price_open));
 				//--- MagicNumberが一致している場合
-				if(magic==MAGICNUM)
+				if(magic==MAGIC_EA)
 				{
 					//--- リクエストと結果の値のゼロ化
 					ZeroMemory(request);
@@ -590,7 +590,7 @@ class COrderManager
 					request.symbol   =position_symbol;         // シンボル
 					request.volume   =volume;                   // ポジションボリューム
 					request.deviation=5;                       // 価格からの許容偏差
-					request.magic    =MAGICNUM;             // ポジションのMagicNumber
+					request.magic    =MAGIC_EA;             // ポジションのMagicNumber
 					//--- ポジションタイプによる注文タイプと価格の設定
 					if(type==POSITION_TYPE_BUY && type==req_type)
 					{
@@ -701,7 +701,7 @@ class COrderManager
 				ENUM_POSITION_TYPE type=(ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
 
 				// EAの注文でない場合はスキップ
-				if( magic != MAGICNUM ) continue;
+				if( magic != MAGIC_EA ) continue;
 				// 指定されたポジションタイプでない場合はスキップ
 				if( req_type != type ) continue;
 
@@ -730,7 +730,7 @@ class COrderManager
 					request.symbol    = position_symbol;
 					request.sl        = 0;
 					request.tp        = new_tp;			// ポジションのTake Profit
-					request.magic     = MAGICNUM;
+					request.magic     = MAGIC_EA;
 
 				}else if( true == b_trailingStop_mode ){//トレーリングストップモード
 					// 新しいSLがすでに所望の値なら何もしない
@@ -758,7 +758,7 @@ class COrderManager
 					request.symbol    = position_symbol;
 					request.sl        = new_sl;			// ポジションのStop Loss
 					request.tp        = 0;
-					request.magic     = MAGICNUM;
+					request.magic     = MAGIC_EA;
 				}
 
 				// リクエストの送信

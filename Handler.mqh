@@ -256,7 +256,7 @@ class CHandler
 		//	参考URL		： なし
 		// **************************	履	歴	************************************
 		// 		v1.0		2021.08.04			Taka		新規
-		// 		v1.1		2021.08.06			Taka		急騰急落注文抑止 機能 追加
+		// 		v1.1		2021.08.06			Taka		急騰急落注文抑止 機能 追加（2ピン目から稼働）
 		// *************************************************************************/
 		void OnTickPosition( ENUM_POSITION_TYPE en_pos ){
 			
@@ -275,11 +275,6 @@ class CHandler
 			
 			/* 片側の注文数が最大値に到達していたら何もしない */
 			if( TotalOrderNum >= AM_OneSideMaxOrderNum ){
-				return;
-			}
-			
-			/* 急激な値動き確認 */
-			if( true == C_CheckerBars.Is_warningPriceDiv() ){		// 急激な価格変化を検知したため、注文を入れない
 				return;
 			}
 			
@@ -318,6 +313,11 @@ class CHandler
 				);
 			}
 			else{							// 2ピン目～注文
+				
+				/* 急激な値動き確認 */
+				if( true == C_CheckerBars.Is_warningPriceDiv() ){		// 急激な価格変化を検知したため、注文を入れない
+					return;
+				}
 				
 				/* 証拠金維持率確認 */
 				// 維持率が低ければ、取引増やさない

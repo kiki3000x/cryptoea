@@ -46,7 +46,7 @@ class CCheckerBars
 			/* 急激変化の機能 */
 			if( ES_BigDivMode == false ){
 				return false;
-			}	
+			}
 			
 			/* Barの取得 */
 			for( int i = 0; i < MAX_CHK_MINUTES + 1; i++ ){

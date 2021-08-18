@@ -186,7 +186,7 @@ class COrderManager
 		// 		v1.0		2021.08.05			Taka		新規
 		// 		v1.1		2021.08.08			Taka		UIの設定値に基づいて利益量を最適化
 		// *************************************************************************/
-		double get_profitAdd( int orderNum ){
+		double get_profitAdd( int orderNum, ENUM_POSITION_TYPE en_type ){
 			
 			double ans = 0.0;
 			
@@ -212,7 +212,13 @@ class COrderManager
 				default:	ans = 500;		break;
 			}
 			
-			ans = ans * AM_Averaging_1st_width / 400.0;			// 400USDに基づく利益量のため
+			/* データコピー */
+			if( en_type == POSITION_TYPE_BUY ){		// 買い（POSITION_TYPE_BUY）
+				ans = ans * AM_1st_buy_width / 400.0;			// 400USDに基づく利益量のため
+			}
+			else{									// 売り（POSITION_TYPE_SELL）
+				ans = ans * AM_1st_sell_width / 400.0;			// 400USDに基づく利益量のため
+			}
 			
 			if( ans < 50.0 ) ans = 50.0;
 			
@@ -304,7 +310,7 @@ class COrderManager
 			}
 			
 			/* 利益とスワップを追加 */
-			d_profit = get_profitAdd( st_data.i_orderNum );
+			d_profit = get_profitAdd( st_data.i_orderNum, en_type );
 			d_swap = get_swapAdd( st_data.i_orderNum );
 			new_tp = NormalizeDouble( sum_amount / sum_volume + ( d_profit + d_swap ) * d_gain , st_data.i_digits[0] );
 			

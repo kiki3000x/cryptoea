@@ -27,7 +27,8 @@ input bool AM_FadeoutModeSell		= false;			// <AM> *Sellフェードアウト機�
 input double AM_1stLotBuy			= 0.01;				// <AM> Buy初期ロット [lot] : 0.01-
 input double AM_1stLotSell			= 0.01;				// <AM> Sell初期ロット [lot] : 0.01-
 input double AM_orderLotGain		= ORDER_LOT_GAIN;	// <AM> ロット増加比率 [倍] : 1.2-1.3
-input int AM_Averaging_1st_width	= 400;				// <AM> 1-2ピン目の幅 [USD] : 100-
+input int AM_1st_buy_width			= 100;				// <AM> BUY 1-2ピン目の幅 [USD] : 100-
+input int AM_1st_sell_width			= 100;				// <AM> SELL 1-2ピン目の幅 [USD] : 100-
 input int AM_MarginRateLimiter		= 3000;				// <AM> 証拠金維持率リミッタ [%] : 1000-
 input int AM_OneSideMaxOrderNum		= MAX_ORDER_NUM;	// <AM> 片側のEA注文最大数 [注文] : 0-12
 input bool ES_BigDivMode			= true;				// <ES> 急騰急落注文抑止機能 : 0:OFF,1:ON
@@ -37,7 +38,7 @@ input int ES_PriceDivnmin_num		= 20;				// <ES> n分足の急激変化 [分] : 6
 input int ES_PriceDivnmin			= 350;				// <ES> n分足の急激変化価格 [USD] : 50-
 input int EL_MaxEntryPrice			= 80000;			// <EL> *最大新規注文価格 [USD] : 20000-
 input int EL_MinEntryPrice			= 20000;			// <EL> *最低新規注文価格 [USD] : 20000-
-input bool AB_BothEntry				= true;				// <AB> アタッカ&バランサ機能 : 0:OFF,1:ON
+input bool AB_BothEntry				= false;			// <AB> アタッカ&バランサ機能 : 0:OFF,1:ON
 input double AB_MaxBackRatio		= 30.0;				// <AB> 最大利益の折返し比率 [USD] : 10-50
 input int AB_StaBlncrNum			= 4;				// <AB> バランサ開始の注文数 [注文目] : 2-7
 
@@ -309,7 +310,7 @@ class CHandler
 					C_OrderManager.OrderTradeActionDeal( AM_1stLotSell, ORDER_TYPE_SELL);	// 新規注文
 				}
 				C_logger.output_log_to_file( 
-					StringFormat("[差分1]%d, [type]%d (0:buy 1:sell)", diff_price_order[0], (int)en_pos ) 
+					StringFormat("[差分1buy]%d,[差分1sell]%d, [type]%d (0:buy 1:sell)", diff_buy_price_order[0], diff_sell_price_order[0], (int)en_pos ) 
 				);
 			}
 			else{							// 2ピン目～注文
@@ -330,16 +331,18 @@ class CHandler
 				
 				/* 差分確認 */
 				lastPrice = get_latestOrderOpenPrice(en_pos);				// 最終価格
-				diffNextPrice = diff_price_order[TotalOrderNum - 1];		// 次の価格との差
 				// 現在価格
 				if( en_pos == POSITION_TYPE_BUY ){		// 買い取引
 					
+					diffNextPrice = diff_buy_price_order[TotalOrderNum - 1];		// 次の価格との差
 					nowPrice	= SymbolInfoDouble( Symbol(), SYMBOL_ASK );	// BUYの現在価格
 					diff 		= lastPrice - nowPrice;						// 現在価格との差
 					en_order	= ORDER_TYPE_BUY;							// BUYの注文
 					base_lot	= AM_1stLotBuy;								// Buyの注文量
 				}
 				else{									// 売り取引
+					
+					diffNextPrice = diff_sell_price_order[TotalOrderNum - 1];		// 次の価格との差
 					nowPrice	= SymbolInfoDouble( Symbol(), SYMBOL_BID );	// SELLの現在価格
 					diff 		= nowPrice - lastPrice;						// 現在価格との差
 					en_order	= ORDER_TYPE_SELL;							// SELLの注文

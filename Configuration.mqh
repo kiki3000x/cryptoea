@@ -101,8 +101,26 @@ const long account_array[] = {
 	1257731,		// 20210803
 };
 
-/* ピン幅リスト */
-int diff_price_order[] = {			// 暫定で初期値入れています（ConfigCustomizeDiffPriceOrderList()で最終値を設定）
+/* ピン幅リスト（ConfigCustomizeDiffPriceOrderList()で最終値を設定） */
+int diff_buy_price_order[] = {		// 暫定で初期値入れています
+	BASE_DIFF_PRICE + 120,			// 01-02ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 2,		// 02-03ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 3,		// 03-04ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 4,		// 04-05ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 5,		// 05-06ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 6,		// 06-07ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 7,		// 07-08ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 8,		// 08-09ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 9,		// 09-10ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 10,		// 10-11ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 11,		// 11-12ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 12,		// 12-13ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 13,		// 13-14ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 14,		// 14-15ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 15,		// 15-16ピン間の価格差
+	BASE_DIFF_PRICE + 120 * 16,		// 16-17ピン間の価格差
+};
+int diff_sell_price_order[] = {		// 暫定で初期値入れています
 	BASE_DIFF_PRICE + 120,			// 01-02ピン間の価格差
 	BASE_DIFF_PRICE + 120 * 2,		// 02-03ピン間の価格差
 	BASE_DIFF_PRICE + 120 * 3,		// 03-04ピン間の価格差
@@ -139,27 +157,48 @@ int diff_price_order[] = {			// 暫定で初期値入れています（ConfigCus
 // *************************************************************************/
 void ConfigCustomizeDiffPriceOrderList(void){
 
-	double d_base = (double)AM_Averaging_1st_width;
+	double d_base = (double)AM_1st_buy_width;
 	
 	/* 値幅を設定 */
-	diff_price_order[0] = (int)NormalizeDouble( d_base * 1.000, 0 );		// 1-2ピン間の価格差
-	diff_price_order[1] = (int)NormalizeDouble( d_base * 1.375, 0 );		// 2-3ピン間の価格差
-	diff_price_order[2] = (int)NormalizeDouble( d_base * 1.750, 0 );		// 3-4ピン間の価格差
-	diff_price_order[3] = (int)NormalizeDouble( d_base * 2.125, 0 );		// 4-5ピン間の価格差
-	diff_price_order[4] = (int)NormalizeDouble( d_base * 2.500, 0 );		// 5-6ピン間の価格差
-	diff_price_order[5] = (int)NormalizeDouble( d_base * 2.875, 0 );		// 6-7ピン間の価格差
-	diff_price_order[6] = (int)NormalizeDouble( d_base * 3.250, 0 );		// 7-8ピン間の価格差
-	diff_price_order[7] = (int)NormalizeDouble( d_base * 4.250, 0 );		// 8-9ピン間の価格差
-	diff_price_order[8] = (int)NormalizeDouble( d_base * 5.250, 0 );		// 9-10ピン間の価格差
-	diff_price_order[9] = (int)NormalizeDouble( d_base * 5.250, 0 );		// 10-ピン間の価格差
+	diff_buy_price_order[0] = (int)NormalizeDouble( d_base * 1.000, 0 );		// 1-2ピン間の価格差
+	diff_buy_price_order[1] = (int)NormalizeDouble( d_base * 1.375, 0 );		// 2-3ピン間の価格差
+	diff_buy_price_order[2] = (int)NormalizeDouble( d_base * 1.750, 0 );		// 3-4ピン間の価格差
+	diff_buy_price_order[3] = (int)NormalizeDouble( d_base * 2.125, 0 );		// 4-5ピン間の価格差
+	diff_buy_price_order[4] = (int)NormalizeDouble( d_base * 2.500, 0 );		// 5-6ピン間の価格差
+	diff_buy_price_order[5] = (int)NormalizeDouble( d_base * 2.875, 0 );		// 6-7ピン間の価格差
+	diff_buy_price_order[6] = (int)NormalizeDouble( d_base * 3.250, 0 );		// 7-8ピン間の価格差
+	diff_buy_price_order[7] = (int)NormalizeDouble( d_base * 4.250, 0 );		// 8-9ピン間の価格差
+	diff_buy_price_order[8] = (int)NormalizeDouble( d_base * 5.250, 0 );		// 9-10ピン間の価格差
+	diff_buy_price_order[9] = (int)NormalizeDouble( d_base * 5.250, 0 );		// 10-ピン間の価格差
 	
 	for ( int i =10; i < MAX_DIFF_PRICE_LIST_NUM; i++ ){
-		diff_price_order[i] = (int)NormalizeDouble( d_base * 5.250, 0 );	// 11-ピン間の価格差
+		diff_buy_price_order[i] = (int)NormalizeDouble( d_base * 5.250, 0 );	// 11-ピン間の価格差
+	}
+	
+	d_base = (double)AM_1st_sell_width;
+	
+	/* 値幅を設定 */
+	diff_sell_price_order[0] = (int)NormalizeDouble( d_base * 1.000, 0 );		// 1-2ピン間の価格差
+	diff_sell_price_order[1] = (int)NormalizeDouble( d_base * 1.375, 0 );		// 2-3ピン間の価格差
+	diff_sell_price_order[2] = (int)NormalizeDouble( d_base * 1.750, 0 );		// 3-4ピン間の価格差
+	diff_sell_price_order[3] = (int)NormalizeDouble( d_base * 2.125, 0 );		// 4-5ピン間の価格差
+	diff_sell_price_order[4] = (int)NormalizeDouble( d_base * 2.500, 0 );		// 5-6ピン間の価格差
+	diff_sell_price_order[5] = (int)NormalizeDouble( d_base * 2.875, 0 );		// 6-7ピン間の価格差
+	diff_sell_price_order[6] = (int)NormalizeDouble( d_base * 3.250, 0 );		// 7-8ピン間の価格差
+	diff_sell_price_order[7] = (int)NormalizeDouble( d_base * 4.250, 0 );		// 8-9ピン間の価格差
+	diff_sell_price_order[8] = (int)NormalizeDouble( d_base * 5.250, 0 );		// 9-10ピン間の価格差
+	diff_sell_price_order[9] = (int)NormalizeDouble( d_base * 5.250, 0 );		// 10-ピン間の価格差
+	
+	for ( int i =10; i < MAX_DIFF_PRICE_LIST_NUM; i++ ){
+		diff_sell_price_order[i] = (int)NormalizeDouble( d_base * 5.250, 0 );	// 11-ピン間の価格差
 	}
 	
 #ifdef debug_Configuration
 	for ( int i =0; i < MAX_DIFF_PRICE_LIST_NUM; i++ ){
-		Print(i,"	",diff_price_order[i]);
+		Print(i,"	",diff_buy_price_order[i]);
+	}
+	for ( int i =0; i < MAX_DIFF_PRICE_LIST_NUM; i++ ){
+		Print(i,"	",diff_sell_price_order[i]);
 	}
 #endif
 	

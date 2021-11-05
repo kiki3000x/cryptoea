@@ -19,6 +19,22 @@
 #include "CheckerBars.mqh"
 
 //**************************************************
+// 定義（define）
+//**************************************************
+
+//**************************************************
+// 列挙体（enum）
+//**************************************************
+
+//**************************************************
+// 構造体（struct）
+//**************************************************
+
+//**************************************************
+// グローバル変数
+//**************************************************
+
+//**************************************************
 // UIインプット
 //**************************************************
 // 新規
@@ -39,14 +55,9 @@ input int ES_PriceDivnmin			= 350;				// <ES> n分足の急激変化価格 [USD]
 input int EL_MaxEntryPrice			= 80000;			// <EL> *最大新規注文価格 [USD] : 20000-
 input int EL_MinEntryPrice			= 20000;			// <EL> *最低新規注文価格 [USD] : 20000-
 input bool AB_BothEntry				= false;			// <AB> アタッカ&バランサ機能 : 0:OFF,1:ON
-input double AB_MaxBackRatio		= 30.0;				// <AB> 最大利益の折返し比率 [USD] : 10-50
-input int AB_StaBlncrNum			= 4;				// <AB> バランサ開始の注文数 [注文目] : 2-7
+input double AB_MaxBackRatio		= 30.0;				// <AB> 最大利益の折返し比率 [%] : 10-50
+input int AB_StaBlncrNum			= 2;				// <AB> バランサ開始の注文数 [注文目] : 2-4
 
-// 既存
-int trailingStop_mode = 100;
-double input_SetSLFromTP_range = -1;
-double input_trailingStop_range = -1;
-double input_terminalg_lot = -1;
 
 
 //**************************************************
@@ -132,55 +143,6 @@ class CHandler
 		
 		
 		// *************************************************************************
-		//	機能		： グローバル変数を初期化
-		//	注意		： なし
-		//	メモ		： なし
-		//	引数		： なし
-		//	返り値		： なし
-		//	参考URL		： なし
-		// **************************	履	歴	************************************
-		// 		v1.0		2021.08.03			taka		新規
-		// *************************************************************************/
-		void initGlobalVal( void ){
-			
-            //グローバル変数の掃除
-			if( true == GlobalVariableCheck("tg_StopOrderJudge_range") ){
-				GlobalVariableDel("tg_StopOrderJudge_range");
-			}
-			if( true == GlobalVariableCheck("tg_StopOrderJudge_minutes") ){
-				GlobalVariableDel("tg_StopOrderJudge_minutes");
-			}
-			
-			//トレーリングストップモードのターミナルグローバル変数がなければ初期化
-			if( false == GlobalVariableCheck("tg_trailingStop_mode")){
-				GlobalVariableSet("tg_trailingStop_mode",false);
-			}
-			if( trailingStop_mode == 1) {
-				GlobalVariableSet("tg_trailingStop_mode",true);
-			}
-			if( trailingStop_mode == 0) {
-				GlobalVariableSet("tg_trailingStop_mode",false);
-			}
-
-			//トレーリングストップ幅のターミナルグローバル変数がなければ初期化
-			if( false == GlobalVariableCheck("tg_trailingStop_range")){
-				GlobalVariableSet("tg_trailingStop_range",100);
-			}
-			if( input_trailingStop_range >= 0 ){
-				GlobalVariableSet("tg_trailingStop_range",input_trailingStop_range);
-			}
-
-			//TPを一定幅超えた場合にSLをTP値に設定する。TPの超え幅の値。
-			if( false == GlobalVariableCheck("tg_SetSLFromTP_range")){
-				GlobalVariableSet("tg_SetSLFromTP_range",5);
-			}
-			if( input_SetSLFromTP_range >= 0 ){
-				GlobalVariableSet("tg_SetSLFromTP_range",input_SetSLFromTP_range);
-			}
-		}
-		
-		
-		// *************************************************************************
 		//	機能		： 初期化処理
 		//	注意		： なし
 		//	メモ		： なし
@@ -205,9 +167,6 @@ class CHandler
 				
 				return;		// 2回目以降は何もしない
 			} 
-			
-			/* グローバル変数の初期化 */
-			initGlobalVal();
 			
 			/* 口座番号確認 */
 			if( C_CheckerException.Chk_Account() == false ){
@@ -386,6 +345,30 @@ class CHandler
 		
 		
 		// *************************************************************************
+		//	機能		： OnTickの通常ナンピン処理
+		//	注意		： なし
+		//	メモ		： なし
+		//	引数		： なし
+		//	返り値		： なし
+		//	参考URL		： なし
+		// **************************	履	歴	************************************
+		// 		v1.0		2021.08.04			Taka		新規
+		// *************************************************************************/
+		void OnTickAM( void ){
+			
+			C_logger.output_log_to_file("■■■ OnTick: 動作 -> 通常モード");
+			
+			/* 取引処理（注文関連） */
+			OnTickPosition( POSITION_TYPE_BUY );		// Buyの取引
+			OnTickPosition( POSITION_TYPE_SELL );		// Sellの取引
+			
+			/* 価格更新処理 */
+			OnTickUpdatePrice( POSITION_TYPE_BUY );		// Buyの価格更新
+			OnTickUpdatePrice( POSITION_TYPE_SELL );	// Sellの価格更新
+		}
+		
+		
+		// *************************************************************************
 		//	機能		： 価格更新ごとに実行される関数
 		//	注意		： なし
 		//	メモ		： 
@@ -422,96 +405,16 @@ class CHandler
 			}
 //#endif
 			
-			/* 取引処理（注文関連） */
-			OnTickPosition( POSITION_TYPE_BUY );		// Buyの取引
-			OnTickPosition( POSITION_TYPE_SELL );		// Sellの取引
-
-			/* 価格更新処理 */
-			OnTickUpdatePrice( POSITION_TYPE_BUY );		// Buyの価格更新
-			OnTickUpdatePrice( POSITION_TYPE_SELL );	// Sellの価格更新
-
-
-
-#ifdef AAA		
-	
-			// 証拠金維持率チェック (所定のパーセンテージ下回ったら取引しない)
-			if( AccountInfoDouble( ACCOUNT_MARGIN_LEVEL ) != 0 ){			// ポジションが0の時は維持率0になる
-				if( AccountInfoDouble( ACCOUNT_MARGIN_LEVEL ) < MINIMUN_ACCOUNT_MARGIN_LEVEL ){
-					//C_logger.output_log_to_file(StringFormat("証拠金維持率　=　%f",AccountInfoDouble(ACCOUNT_MARGIN_LEVEL)));
-					return;
-				}
+			/* ナンピンの注文方法に応じて注文を実施 */
+			if( AB_BothEntry == false ){		// 通常モード
+				OnTickAM();
 			}
-			
-			// 急激な値幅の有無チェック。急な上場時はSELLを入れない。急な下降時はBUYを入れない
-			int deal_recomment;
-			int diff_price_for_order = BASE_DIFF_PRICE_TO_ORDER2;
-//			deal_recomment = C_CheckerBars.Chk_preiod_m1_bars();
-			//deal_recomment_for_super = C_CheckerBars.Chk_preiod_m1_bars_stoporder();//壮大な過剰変動時対応
-
-			//#######################################ロングの処理start##################################################
-			if( RECOMMEND_STOP_BUY_DEAL != deal_recomment  ){ //BUYが値幅チェックにより制限がかかっていなければ処理開始
-				
-				//注文処理
-				int TotalOrderNumBuy = C_OrderManager.get_TotalOrderNum(POSITION_TYPE_BUY);
-				if(0 != TotalOrderNumBuy){
-					//ロングの前回ポジからの現在価格との差を計算
-					double ask_diff = get_latestOrderOpenPrice(POSITION_TYPE_BUY) - SymbolInfoDouble(Symbol(),SYMBOL_ASK);
-					diff_price_for_order = diff_price_order[TotalOrderNumBuy-1];
-
-					//所定のピン幅下がったら、追加量テーブルに従って所定量追加
-					if(ask_diff > diff_price_for_order){
-						//ポジション限界値を超えない場合
-						if( C_OrderManager.get_TotalOrderNum(POSITION_TYPE_BUY) < MAX_ORDER_NUM ){
-							int num = CalculatePositionNum( POSITION_TYPE_BUY );
-							C_logger.output_log_to_file(StringFormat("Handler::OnTick　注文判断変化量=%d 直前ポジと現在価格の差(ASK)=%f lot=%f num=%d",
-																	diff_price_for_order, ask_diff, lot_list[num] * base_lot, num));
-							C_OrderManager.OrderTradeActionDeal( lot_list[num] * base_lot * 1.278, ORDER_TYPE_BUY);
-							//TP更新
-							C_OrderManager.UpdateSLTP( POSITION_TYPE_BUY );
-						}
-					}
-				}
-				else{
-					//ノーポジ時( フェードアウトモード時は注文しない,それ以外は新規注文を行う)
-					if( GlobalVariableGet("terminalg_fadeout_mode") == false ){
-						OrderForNoPosition();
-					}
-				}
+			else{		// アタッカー&バランサーモード
+//				OnTickBL();
 			}
-			//#######################################ロングの処理end######################################################
-			//#######################################ショートの処理start##################################################
-			if( RECOMMEND_STOP_SELL_DEAL != deal_recomment ){ //SELLが値幅チェックにより制限がかかっていなければ処理開始
-
-				//注文処理
-				int TotalOrderNumSell = C_OrderManager.get_TotalOrderNum(POSITION_TYPE_SELL);
-				if(0 != TotalOrderNumSell){
-					//ショートの前回ポジと現在価格との差を計算
-					double bid_diff = SymbolInfoDouble(Symbol(),SYMBOL_BID) - get_latestOrderOpenPrice(POSITION_TYPE_SELL);
-					diff_price_for_order = diff_price_order[TotalOrderNumSell-1];
-
-					//所定のピン幅上がったら、追加量テーブルに従って所定量追加
-					if(bid_diff > diff_price_for_order){
-						//ポジション限界値を超えない場合
-						if( C_OrderManager.get_TotalOrderNum(POSITION_TYPE_SELL) < MAX_ORDER_NUM ){
-							int num = CalculatePositionNum( POSITION_TYPE_SELL );
-							C_logger.output_log_to_file(StringFormat("Handler::OnTick　注文判断変化量=%d 直前ポジと現在価格の差(BID)=%f lot=%f num=%d",
-																	diff_price_for_order, bid_diff, lot_list[num] * base_lot, num));
-							C_OrderManager.OrderTradeActionDeal( lot_list[num] * base_lot * 1.278, ORDER_TYPE_SELL);
-							//TP更新
-							C_OrderManager.UpdateSLTP( POSITION_TYPE_SELL );
-						} 
-					}
-				}
-				else{
-					//ノーポジ時( フェードアウトモード時は注文しない,それ以外は新規注文を行う)
-					if( GlobalVariableGet("terminalg_fadeout_mode") == false ){
-						OrderForNoPosition();
-					}
-				}
-			}
-			//#######################################ショートの処理end######################################################
-#endif
 		}
+		
+		
 		// *************************************************************************
 		//	機能		： Trunsaction更新ごとに実行される関数
 		//	注意		： なし
